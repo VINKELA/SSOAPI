@@ -1,2 +1,2 @@
 # SSOAPI
-Application that handles authentication and authorization for school Robot
+Application that handles authentication and authorization
