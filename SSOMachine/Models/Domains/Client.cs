@@ -12,8 +12,9 @@ namespace SSOMachine.Models.Domains
         public string ContactPerson { get; set; }
         public string ContactPersonEmail { get; set; }
         public string ContactPersonPhoneNumber { get; set; }
-        public string Logo { get; set; }
+        public string LogoUrl { get; set; }
         public string Motto { get; set; }
+        public long? ParentId { get; set; }
 
     }
 }

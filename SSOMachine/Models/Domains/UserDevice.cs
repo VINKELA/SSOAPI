@@ -1,11 +1,13 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
+﻿using SSOMachine.Models.Enums;
 
 namespace SSOMachine.Models.Domains
 {
     public class UserDevice
     {
+        public long UserId { get; set; }
+        public DeviceType DeviceType { get; set; }
+        public string DeviceName { get; set; }
+        public bool AcceptsNotification { get; set; }
+
     }
 }

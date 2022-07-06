@@ -2,6 +2,7 @@
 {
     public enum ClientType
     {
+        Individual,
         ExamBody,
         School,
         HigherInsitution,

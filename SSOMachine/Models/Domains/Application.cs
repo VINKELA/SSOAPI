@@ -1,11 +1,12 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
+﻿using SSOMachine.Models.Enums;
 
 namespace SSOMachine.Models.Domains
 {
-    public class Application
+    public class Application : EntityTracking
     {
+        public string Name { get; set; }
+        public ApplicationType ApplicationType { get; set; }
+        public string URL { get; set; }
+        public ServiceType? ServiceType { get; set; }
     }
 }

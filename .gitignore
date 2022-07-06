@@ -13,3 +13,6 @@
 /SSOMachine/bin/Debug/netcoreapp3.1
 /SSOServiceTest/obj/Debug/netcoreapp3.1
 /SSOServiceTest/obj
+/SSOMachine/.vs/SSOMachine/DesignTimeBuild
+/SSOMachine/bin/Debug/net6.0
+/SSOServiceTest/bin/Debug/netcoreapp3.1

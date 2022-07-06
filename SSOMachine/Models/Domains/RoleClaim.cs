@@ -1,11 +1,9 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-
-namespace SSOMachine.Models.Domains
+﻿namespace SSOMachine.Models.Domains
 {
-    public class RoleClaim
+    public class RoleClaim : EntityTracking
     {
+        public string ClaimType { get; set; }
+        public string ClaimValue { get; set; }
+        public int RoleId { get; set; }
     }
 }
