@@ -2,7 +2,7 @@
 
 namespace SSOMachine.Models.Domains
 {
-    public class Subscription
+    public class Subscription : EntityTracking
     {
         public string Name { get; set; }
         public ClientType ClientType { get; set; }

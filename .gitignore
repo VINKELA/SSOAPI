@@ -16,3 +16,5 @@
 /SSOMachine/.vs/SSOMachine/DesignTimeBuild
 /SSOMachine/bin/Debug/net6.0
 /SSOServiceTest/bin/Debug/netcoreapp3.1
+/SSOMachine/bin/Debug/net5.0
+/SSOMachine/.vs/SSOService/DesignTimeBuild

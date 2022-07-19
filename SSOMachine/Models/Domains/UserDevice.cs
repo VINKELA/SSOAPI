@@ -2,7 +2,7 @@
 
 namespace SSOMachine.Models.Domains
 {
-    public class UserDevice
+    public class UserDevice : Base
     {
         public long UserId { get; set; }
         public DeviceType DeviceType { get; set; }
