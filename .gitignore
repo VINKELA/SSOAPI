@@ -2,19 +2,10 @@
 # This .gitignore file was automatically created by Microsoft(R) Visual Studio.
 ################################################################################
 
-/.vs/slnx.sqlite
-/.vs/SSOAPI/v16
-/.vs
-/SSOMachine/.vs/SSOMachine/v16
-/SSOMachine/obj/Debug/netcoreapp3.1
-/SSOMachine/obj/Container
-/SSOMachine/obj
-/SSOMachine/.vs/SSOService/v16
-/SSOMachine/bin/Debug/netcoreapp3.1
-/SSOServiceTest/obj/Debug/netcoreapp3.1
-/SSOServiceTest/obj
-/SSOMachine/.vs/SSOMachine/DesignTimeBuild
-/SSOMachine/bin/Debug/net6.0
-/SSOServiceTest/bin/Debug/netcoreapp3.1
-/SSOMachine/bin/Debug/net5.0
-/SSOMachine/.vs/SSOService/DesignTimeBuild
+/SSOService/obj
+/SSOService/bin/Debug/net5.0/zh-Hans
+/SSOService/bin/Debug/net5.0
+/SSOService/.vs/SSOService/config
+/SSOService/.vs/SSOService/DesignTimeBuild
+/SSOService/.vs/SSOService/v16
+/SSOService/.vs
