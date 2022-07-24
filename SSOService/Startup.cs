@@ -36,6 +36,8 @@ namespace SSOService
             });
             services.AddScoped<IClientRepository, ClientRepository>();
             services.AddScoped<IServiceResponse, ServiceReponse>();
+            services.AddScoped<IUserRepository, UserRepository>();
+
 
         }
 

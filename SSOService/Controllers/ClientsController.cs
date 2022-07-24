@@ -35,11 +35,11 @@ namespace SSOService.Controllers
         [ProducesResponseType(type: typeof(Response<GetClientDTO>), statusCode: 200)]
         public async Task<IActionResult> DeleteClient(Guid id)
             => Ok(await _client.ChangeState(id, false, true));
-        [HttpPut("activate/{id}")]
+        [HttpPatch("activate/{id}")]
         [ProducesResponseType(type: typeof(Response<GetClientDTO>), statusCode: 200)]
         public async Task<IActionResult> ActivateClient(Guid id)
             => Ok(await _client.ChangeState(id));
-        [HttpPut("deactivate/{id}")]
+        [HttpPatch("deactivate/{id}")]
         [ProducesResponseType(type: typeof(Response<GetClientDTO>), statusCode: 200)]
         public async Task<IActionResult> DeactivateClient(Guid id)
             => Ok(await _client.ChangeState(id, true));
@@ -52,7 +52,7 @@ namespace SSOService.Controllers
         public async Task<IActionResult> Get(string name,
       string contactPersonEmail, ClientType? clientType)
         => Ok(await _client.Get(name, contactPersonEmail, clientType));
-        [HttpPost("{id}")]
+        [HttpPut("{id}")]
         [ProducesResponseType(type: typeof(Response<GetClientDTO>), statusCode: 200)]
         public async Task<IActionResult> Update(Guid id, [FromBody] UpdateClientDTO client)
         => Ok(await _client.Update(id, client));
