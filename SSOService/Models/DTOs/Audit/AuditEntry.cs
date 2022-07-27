@@ -2,7 +2,7 @@
 using System;
 using System.Collections.Generic;
 
-namespace SSOService.Models
+namespace SSOService.Models.DTOs.Audit
 {
     public class AuditEntry
     {

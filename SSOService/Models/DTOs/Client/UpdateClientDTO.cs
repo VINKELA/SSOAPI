@@ -1,4 +1,5 @@
-﻿using SSOService.Models.Enums;
+﻿using Microsoft.AspNetCore.Http;
+using SSOService.Models.Enums;
 
 namespace SSOService.Models.DTOs
 {
@@ -12,7 +13,7 @@ namespace SSOService.Models.DTOs
         public string ContactPerson { get; set; }
         public string ContactPersonEmail { get; set; }
         public string ContactPersonPhoneNumber { get; set; }
-        public string LogoUrl { get; set; }
+        public IFormFile Image { get; set; }
         public string Motto { get; set; }
         public string ParentClientId { get; set; }
     }

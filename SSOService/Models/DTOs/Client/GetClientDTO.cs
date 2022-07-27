@@ -19,5 +19,7 @@ namespace SSOService.Models.DTOs
         public string ClientTypeName { get; set; }
         public bool IsActive { get; set; }
         public string Id { get; set; }
+        public byte[] Logo { get; set; }
+
     }
 }

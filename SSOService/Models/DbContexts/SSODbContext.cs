@@ -2,6 +2,7 @@
 using Newtonsoft.Json;
 using SSOMachine.Models.Domains;
 using SSOService.Models.Domains;
+using SSOService.Models.DTOs.Audit;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
@@ -31,6 +32,8 @@ namespace SSOService.Models.DbContexts
         public virtual DbSet<Role> Roles { get; set; }
         public virtual DbSet<RoleClaim> RoleClaims { get; set; }
         public virtual DbSet<RolePermission> RolePermissions { get; set; }
+        public virtual DbSet<UserClient> UserClients { get; set; }
+
         public virtual async Task<int> SaveAndAuditChangesAsync(Guid userId)
         {
             int result = 0;

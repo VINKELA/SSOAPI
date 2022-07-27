@@ -26,7 +26,7 @@ namespace SSOService.Controllers
         // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
         [HttpPost]
         [ProducesResponseType(type: typeof(Response<GetClientDTO>), statusCode: 200)]
-        public async Task<IActionResult> PostClient([FromBody] CreateClientDTO client)
+        public async Task<IActionResult> PostClient([FromForm] CreateClientDTO client)
             => Ok(await _client.Save(client));
         [HttpGet("clientTypes")]
         public ActionResult<Response<List<List<EnumList>>>> GetClientTypes()
@@ -54,7 +54,7 @@ namespace SSOService.Controllers
         => Ok(await _client.Get(name, contactPersonEmail, clientType));
         [HttpPut("{id}")]
         [ProducesResponseType(type: typeof(Response<GetClientDTO>), statusCode: 200)]
-        public async Task<IActionResult> Update(Guid id, [FromBody] UpdateClientDTO client)
+        public async Task<IActionResult> Update(Guid id, [FromForm] UpdateClientDTO client)
         => Ok(await _client.Update(id, client));
 
 

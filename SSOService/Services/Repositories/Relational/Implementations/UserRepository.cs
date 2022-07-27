@@ -5,7 +5,10 @@ using SSOService.Helpers;
 using SSOService.Models;
 using SSOService.Models.Constants;
 using SSOService.Models.DbContexts;
+using SSOService.Models.Domains;
+using SSOService.Models.DTOs.Client;
 using SSOService.Models.DTOs.User;
+using SSOService.Models.Enums;
 using SSOService.Services.Repositories.NonRelational.Interfaces;
 using System;
 using System.Collections.Generic;
@@ -28,11 +31,13 @@ namespace SSOService.Services.Repositories.Relational.Implementations
             "contain lowercase, upper case and special character";
         private readonly SSODbContext _db;
         private readonly IServiceResponse _response;
+        private readonly IFileRepository _fileRepository;
         private readonly GetUserDTO ReturnType = new();
-        public UserRepository(IServiceResponse response, SSODbContext db)
+        public UserRepository(IServiceResponse response, SSODbContext db, IFileRepository fileRepository)
         {
             _response = response;
             _db = db;
+            _fileRepository = fileRepository;
         }
         public async Task<Response<GetUserDTO>> Save(CreateUserDTO user)
         {
@@ -58,7 +63,7 @@ namespace SSOService.Services.Repositories.Relational.Implementations
                 return _response.FailedResponse(ReturnType,
                     string.Format(ValidationConstants.EmptyRequiredFieldResponse, PhoneNumber));
             var phone = user.PhoneNumber.Trim().ToLower();
-            if (!IsPhoneNumberValid(phone))
+            if (IsPhoneNumberValid(phone))
                 return _response.FailedResponse(ReturnType,
                     string.Format(ValidationConstants.InvalidFieldFormatResponse, PhoneNumber));
             if (_db.Users.Any(x => x.PhoneNumber == phone))
@@ -74,14 +79,24 @@ namespace SSOService.Services.Repositories.Relational.Implementations
                 string.Format(ValidationConstants.EmptyRequiredFieldResponse, Confirmation));
             if (user.Confirmation != user.Password)
                 return _response.FailedResponse(ReturnType, PasswordConfirmationMismatch);
-            Guid cliendId = Guid.Empty;
+            List<Guid> clients = new();
             bool hasClient;
-            if (!string.IsNullOrEmpty(user.ClientId))
+            if (user.Clients != null && user.Clients.Count > 0)
             {
-                hasClient = Guid.TryParse(user.ClientId, out cliendId);
-                var clientDetais = _db.Clients.Any(x => x.Id == cliendId);
-                if (!clientDetais) return _response.FailedResponse(ReturnType,
-                    string.Format(ValidationConstants.InvalidFieldResponse, user.ClientId, ClassNames.Client));
+                for (int i = 0; i < user.Clients.Count; i++)
+                {
+                    var client = user.Clients[i];
+                    hasClient = Guid.TryParse(client, out Guid clientGuid);
+                    var clientDetais = _db.Clients.Any(x => x.Id == clientGuid);
+                    if (!clientDetais) return _response.FailedResponse(ReturnType,
+                        string.Format(ValidationConstants.InvalidFieldResponse, user.Clients, ClassNames.Client));
+                    clients.Add(clientGuid);
+                }
+            }
+            string filePath = null;
+            if (user.File != null)
+            {
+                filePath = await _fileRepository.Save(user.File, email, FileType.UserImage);
             }
             var username = !string.IsNullOrEmpty(user.UserName) ? user.UserName.Trim().ToUpper()
                 : firstname;
@@ -91,14 +106,21 @@ namespace SSOService.Services.Repositories.Relational.Implementations
                 LastName = lastname,
                 Email = email,
                 UserName = username,
-                ClientId = cliendId != Guid.Empty ? cliendId : null,
                 PasswordHash = HashEngine.GetHash(user.Password),
-                PhoneNumber = phone
+                PhoneNumber = phone,
+                FilePath = filePath
+
             };
             _db.Users.Add(newUser);
             var result = await _db.SaveAndAuditChangesAsync(Guid.NewGuid());
-            return result > 0 ? _response.SuccessResponse(Todto(newUser)) :
-                _response.FailedResponse(ReturnType);
+            var createdUser = _db.Users.FirstOrDefault(x => x.Email == user.Email);
+            if (createdUser != null)
+            {
+                if (clients.Count > 0)
+                    await RegisterUserWithClient(createdUser.Id, clients);
+                return _response.SuccessResponse(Todto(createdUser));
+            }
+            return _response.FailedResponse(ReturnType);
         }
         public async Task<Response<GetUserDTO>> Update(Guid id, UpdateUserDTO user)
         {
@@ -112,26 +134,43 @@ namespace SSOService.Services.Repositories.Relational.Implementations
             var lastname = user.LastName != null ? user.LastName.Trim().ToUpper() : current.LastName;
             var username = user.UserName != null ? user.UserName.Trim().ToUpper() : current.UserName;
             Guid cliendId = Guid.Empty;
+            List<Guid> clients = new();
             bool hasClient;
-            if (!string.IsNullOrEmpty(user.ClientId))
+            if (user.ClientIds.Count > 0)
             {
-                hasClient = Guid.TryParse(user.ClientId, out cliendId);
-                var clientDetais = _db.Clients.Any(x => x.Id == cliendId);
-                if (!clientDetais) return _response.FailedResponse(ReturnType,
-                    string.Format(ValidationConstants.InvalidFieldResponse, user.ClientId, ClassNames.Client));
+                for (int i = 0; i < user.ClientIds.Count; i++)
+                {
+                    var client = user.ClientIds[i];
+                    hasClient = Guid.TryParse(client, out Guid clientGuid);
+                    var clientDetais = _db.Clients.Any(x => x.Id == clientGuid);
+                    if (!clientDetais) return _response.FailedResponse(ReturnType,
+                        string.Format(ValidationConstants.InvalidFieldResponse, client, ClassNames.Client));
+                    clients.Add(clientGuid);
+                }
+            }
+            string filePath = current.FilePath;
+            if (user.File != null)
+            {
+                filePath = await _fileRepository.Save(user.File, current.Email, FileType.UserImage);
             }
             current.FirstName = firstname;
             current.LastName = lastname;
             current.UserName = username;
-            current.ClientId = cliendId == Guid.Empty ? current.ClientId : cliendId;
             current.Modified = DateTime.Now;
+            current.FilePath = filePath;
             if (HasChanged(current))
                 return _response.FailedResponse(ReturnType, string.Format(ValidationConstants.EntityChangedByAnotherUser, current.Id));
             current.ConcurrencyStamp = Guid.NewGuid();
             _db.Users.Update(current);
             var result = await _db.SaveAndAuditChangesAsync(Guid.NewGuid());
-            return result > 0 ? _response.SuccessResponse(Todto(current)) :
-            _response.FailedResponse(ReturnType);
+            if (result > 0)
+            {
+                if (clients.Count > 0)
+                    await RegisterUserWithClient(current.Id, clients);
+                _response.SuccessResponse(Todto(current));
+            }
+
+            return _response.FailedResponse(ReturnType);
         }
         public async Task<Response<GetUserDTO>> ChangeState(Guid id, bool deactivate = false, bool delete = false)
         {
@@ -175,15 +214,27 @@ namespace SSOService.Services.Repositories.Relational.Implementations
             if (!string.IsNullOrEmpty(phoneNumber))
                 users = users.Where(x => x.PhoneNumber.Contains(phoneNumber.Trim()));
             if (!string.IsNullOrEmpty(client))
-                users = users.Where(x => x.ClientName.ToUpper().Contains(client.Trim().ToUpper()));
+                users = users.Where(x => x.Clients.Select(x => x.ClientName).Contains(client.Trim().ToUpper()));
             return _response.SuccessResponse(users);
         }
         private GetUserDTO Todto(User user)
         {
-            if (user.Id == Guid.Empty)
-                user = _db.Users.FirstOrDefault(x => x.Email == user.Email);
-            var client = _db.Clients.FirstOrDefault(x => x.Id == user.ClientId);
-            var clientName = client != null ? client.Name : ValidationConstants.NotAvailable;
+            var clients = _db.Clients.Where(x => !x.IsDeleted);
+            var userClients = _db.UserClients.Where(x => x.UserId == user.Id).ToList();
+            var data = new List<UserClientDTO>();
+            foreach (var client in userClients)
+            {
+                var currentClient = clients.FirstOrDefault(y => y.Id == client.ClientId);
+                if (currentClient != null)
+                {
+                    data.Add(new UserClientDTO
+                    {
+                        ClientId = currentClient.Id,
+                        ClientName = currentClient.Name
+                    });
+                }
+            }
+
             return new GetUserDTO()
             {
                 FirstName = user.FirstName.ToTitleCase(),
@@ -191,10 +242,11 @@ namespace SSOService.Services.Repositories.Relational.Implementations
                 UserName = user.UserName.ToTitleCase(),
                 Email = user.Email.ToLower(),
                 PhoneNumber = user.PhoneNumber,
-                ClientName = clientName,
                 IsActive = user.IsActive,
-                ClientId = user.ClientId,
-                Id = user.Id
+                Clients = data,
+                Id = user.Id,
+                Image = user.FilePath != null ? _fileRepository.Get(user.FilePath, FileType.UserImage) : null
+
             };
         }
         private static bool ValidatePassword(string password)
@@ -236,7 +288,16 @@ namespace SSOService.Services.Repositories.Relational.Implementations
         }
         private static bool IsPhoneNumberValid(string phoneNumber)
         {
-            return Regex.Match(phoneNumber, @"^(\+[0-9]{9})$").Success;
+            var re = @"^\(?([0-9]{3})\)?[-. ]?([0-9]{3})[-. ]?([0-9]{4})$";
+
+            return Regex.IsMatch(phoneNumber, re);
+        }
+        private async Task<bool> RegisterUserWithClient(Guid userId, List<Guid> clients)
+        {
+            _db.UserClients.AddRange(clients
+               .Select(x => new UserClient { UserId = userId, ClientId = x }));
+            var result = await _db.SaveAndAuditChangesAsync(Guid.NewGuid());
+            return result > 0;
         }
 
 

@@ -16,7 +16,7 @@ namespace SSOMachine.Models.Domains
         public DateTime LockoutEnds { get; set; }
         public string UserName { get; set; }
         public int AccessFailedCount { get; set; }
-        public Guid? ClientId { get; set; }
+        public string FilePath { get; set; }
 
     }
 }

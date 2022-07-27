@@ -7,12 +7,12 @@ namespace SSOService.Helpers
     public static class HashEngine
     {
 
+        private static readonly SHA256 _sha256Hash = SHA256.Create();
 
         public static string GetHash(string input)
         {
-            SHA256 sha256Hash = SHA256.Create();
             // Convert the input string to a byte array and compute the hash.
-            byte[] data = sha256Hash.ComputeHash(Encoding.UTF8.GetBytes(input));
+            byte[] data = _sha256Hash.ComputeHash(Encoding.UTF8.GetBytes(input));
 
             // Create a new Stringbuilder to collect the bytes
             // and create a string.
@@ -32,7 +32,6 @@ namespace SSOService.Helpers
         // Verify a hash against a string.
         public static bool VerifyHash(string input, string hash)
         {
-            using SHA256 sha256Hash = SHA256.Create();
             var hashOfInput = GetHash(input);
 
             // Create a StringComparer an compare the hashes.

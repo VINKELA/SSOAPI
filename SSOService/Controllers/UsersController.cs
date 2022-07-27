@@ -25,7 +25,7 @@ namespace SSOService.Controllers
         public async Task<ActionResult<IEnumerable<GetUserDTO>>> Get(string name = null, string email = null,
    string phoneNumber = null, string client = null) => Ok(await _user.Get(name, email, phoneNumber, client));
         [HttpPut("{id}")]
-        public async Task<ActionResult<GetUserDTO>> Post(Guid id, UpdateUserDTO user)
+        public async Task<ActionResult<GetUserDTO>> Post(Guid id, [FromForm] UpdateUserDTO user)
             => Ok(await _user.Update(id, user));
 
         // GET: api/Users/5
@@ -46,7 +46,7 @@ namespace SSOService.Controllers
         // POST: api/Users
         // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
         [HttpPost]
-        public async Task<ActionResult<Response<GetUserDTO>>> Post(CreateUserDTO user)
+        public async Task<ActionResult<Response<GetUserDTO>>> Post([FromForm] CreateUserDTO user)
             => Ok(await _user.Save(user));
 
         // DELETE: api/Users/5

@@ -24,11 +24,14 @@ namespace SSOService.Services.Repositories.Relational.Implementations
         private readonly SSODbContext _db;
         private readonly IServiceResponse _response;
         private readonly GetClientDTO ReturnType = new();
+        private readonly IFileRepository _fileRepository;
 
-        public ClientRepository(SSODbContext db, IServiceResponse response)
+
+        public ClientRepository(SSODbContext db, IServiceResponse response, IFileRepository fileRepository)
         {
             _db = db;
             _response = response;
+            _fileRepository = fileRepository;
         }
 
         public async Task<Response<GetClientDTO>> Save(CreateClientDTO client)
@@ -45,11 +48,18 @@ namespace SSOService.Services.Repositories.Relational.Implementations
             if (client.ClientType == ClientType.Unknown || !Enum.GetValues<ClientType>().Contains(client.ClientType))
                 return _response.FailedResponse(ReturnType,
                     string.Format(ValidationConstants.InvalidFieldResponse, client.ClientType, Type));
+            string filePath = null;
+            if (client.Logo != null)
+            {
+                filePath = await _fileRepository.Save(client.Logo, client.Name, FileType.ClientLogo);
+            }
+
             var newClient = new Client()
             {
                 ClientType = client.ClientType,
                 ContactPersonEmail = client.ContactPersonEmail.Trim().ToUpper(),
                 Name = client.Name.Trim().ToUpper(),
+                LogoUrl = filePath
             };
             _db.Clients.Add(newClient);
             var result = await _db.SaveAndAuditChangesAsync(Guid.NewGuid());
@@ -122,7 +132,8 @@ namespace SSOService.Services.Repositories.Relational.Implementations
                 ParentClient = client.ParentClient != null && client.ParentClient != Guid.Empty ? client.ParentClient.ToString() : ValidationConstants.NotAvailable,
                 ParentClientName = parentName,
                 State = client.State != null ? client.State.ToTitleCase() : ValidationConstants.NotAvailable,
-                IsActive = client.IsActive
+                IsActive = client.IsActive,
+                Logo = !string.IsNullOrEmpty(client.LogoUrl) ? _fileRepository.Get(client.LogoUrl, FileType.ClientLogo) : null
             };
         }
 
@@ -145,6 +156,12 @@ namespace SSOService.Services.Repositories.Relational.Implementations
                 if (parent == null) return
                          _response.FailedResponse(returnType, string.Format(ValidationConstants.FieldNotFound, EntityName));
             }
+            string filePath = null;
+            if (client.Image != null)
+            {
+                filePath = await _fileRepository.Save(client.Image, client.Name, FileType.UserImage);
+            }
+
             current.Address = string.IsNullOrEmpty(client.Address) ? current.Address : client.Address.Trim().ToLower();
             current.ClientType = client.ClientType != ClientType.Unknown ? client.ClientType : current.ClientType;
             current.ContactPerson = string.IsNullOrEmpty(client.ContactPerson) ?
@@ -152,7 +169,7 @@ namespace SSOService.Services.Repositories.Relational.Implementations
             current.ContactPersonPhoneNumber = string.IsNullOrEmpty(client.ContactPersonPhoneNumber) ?
                 current.ContactPersonPhoneNumber : client.ContactPersonPhoneNumber.Trim();
             current.Country = string.IsNullOrEmpty(client.Country) ? current.Country : client.Country.Trim().ToUpper();
-            current.LogoUrl = string.IsNullOrEmpty(client.LogoUrl) ? current.LogoUrl : client.LogoUrl.Trim();
+            current.LogoUrl = string.IsNullOrEmpty(filePath) ? current.LogoUrl : filePath;
             current.Motto = string.IsNullOrEmpty(client.Motto) ? current.Motto : client.Motto.Trim().ToLower();
             current.Name = string.IsNullOrEmpty(client.Name) ? current.Name : client.Name.Trim().ToUpper();
             current.ParentClient = string.IsNullOrEmpty(client.ParentClientId) ? parentId : current.ParentClient;
