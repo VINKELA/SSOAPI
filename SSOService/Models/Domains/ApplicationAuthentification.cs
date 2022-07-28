@@ -3,6 +3,7 @@ using System;
 
 namespace SSOService.Models.Domains
 {
+    // This is the authentication between communicating applications
     public class ApplicationAuthentification : EntityTracking
     {
         public string Token { get; set; }

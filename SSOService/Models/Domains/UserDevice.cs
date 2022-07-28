@@ -3,6 +3,7 @@ using System;
 
 namespace SSOMachine.Models.Domains
 {
+    //This is the devices used by a user to access the system
     public class UserDevice : Base
     {
         public Guid UserId { get; set; }

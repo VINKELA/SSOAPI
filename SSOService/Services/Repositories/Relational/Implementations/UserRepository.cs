@@ -9,6 +9,7 @@ using SSOService.Models.Domains;
 using SSOService.Models.DTOs.Client;
 using SSOService.Models.DTOs.User;
 using SSOService.Models.Enums;
+using SSOService.Services.General.Interfaces;
 using SSOService.Services.Repositories.NonRelational.Interfaces;
 using System;
 using System.Collections.Generic;

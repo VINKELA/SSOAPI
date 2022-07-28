@@ -3,6 +3,7 @@ using System;
 
 namespace SSOMachine.Models.Domains
 {
+    //This is the user logins
     public class UserLogin : Base
     {
         public Guid UserId { get; set; }

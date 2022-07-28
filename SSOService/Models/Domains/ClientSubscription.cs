@@ -2,6 +2,7 @@
 
 namespace SSOMachine.Models.Domains
 {
+    //This refers to the suscriptions by a customer or client
     public class ClientSubscription : EntityTracking
     {
         public Guid ClientId { get; set; }

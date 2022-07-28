@@ -1,5 +1,5 @@
 ﻿using SSOService.Models;
-using SSOService.Services.Repositories.NonRelational.Interfaces;
+using SSOService.Services.General.Interfaces;
 
 namespace SSOService.Services.Repositories.NonRelational.Implementations
 {

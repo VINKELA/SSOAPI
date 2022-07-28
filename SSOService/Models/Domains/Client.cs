@@ -3,6 +3,7 @@ using System;
 
 namespace SSOMachine.Models.Domains
 {
+    // A business that has users this sso, this is our customers
     public class Client : EntityTracking
     {
         public string Name { get; set; }

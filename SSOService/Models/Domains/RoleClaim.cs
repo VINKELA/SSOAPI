@@ -2,7 +2,8 @@
 
 namespace SSOMachine.Models.Domains
 {
-    public class RoleClaim : EntityTracking
+    //A client can create custom permission for users using role claim
+    public class RoleClaim : Base
     {
         public string ClaimType { get; set; }
         public string ClaimValue { get; set; }

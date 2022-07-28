@@ -1,16 +1,20 @@
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using SSOService.MiddleWares;
 using SSOService.Models.DbContexts;
+using SSOService.Services.General.Interfaces;
 using SSOService.Services.Repositories.NonRelational.Implementations;
 using SSOService.Services.Repositories.NonRelational.Interfaces;
 using SSOService.Services.Repositories.Relational.Implementations;
 using SSOService.Services.Repositories.Relational.Interfaces;
+using System.Text;
 
 namespace SSOService
 {
@@ -38,7 +42,21 @@ namespace SSOService
             services.AddScoped<IServiceResponse, ServiceReponse>();
             services.AddScoped<IUserRepository, UserRepository>();
             services.AddScoped<IFileRepository, FileServer>();
-
+            services.AddAuthentication
+            (JwtBearerDefaults.AuthenticationScheme)
+            .AddJwtBearer(options =>
+            {
+                options.TokenValidationParameters = new TokenValidationParameters
+                {
+                    ValidateIssuer = true,
+                    ValidateAudience = true,
+                    ValidateLifetime = true,
+                    ValidateIssuerSigningKey = true,
+                    ValidIssuer = Configuration["Jwt:Issuer"],
+                    ValidAudience = Configuration["Jwt:Issuer"],
+                    IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(Configuration["Jwt:Key"]))
+                };
+            });
 
 
         }

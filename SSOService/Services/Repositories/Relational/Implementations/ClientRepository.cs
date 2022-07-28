@@ -6,6 +6,7 @@ using SSOService.Models.Constants;
 using SSOService.Models.DbContexts;
 using SSOService.Models.DTOs;
 using SSOService.Models.Enums;
+using SSOService.Services.General.Interfaces;
 using SSOService.Services.Repositories.NonRelational.Interfaces;
 using SSOService.Services.Repositories.Relational.Interfaces;
 using System;

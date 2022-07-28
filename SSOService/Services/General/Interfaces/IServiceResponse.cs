@@ -1,6 +1,6 @@
 ﻿using SSOService.Models;
 
-namespace SSOService.Services.Repositories.NonRelational.Interfaces
+namespace SSOService.Services.General.Interfaces
 {
     public interface IServiceResponse
     {

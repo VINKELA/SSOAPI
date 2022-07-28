@@ -2,7 +2,8 @@
 
 namespace SSOService.Models.Domains
 {
-    public class UserPermission : EntityTracking
+    //This is the user permissions
+    public class UserPermission : Base
     {
         public long UserId { get; set; }
         public long PermissionId { get; set; }
