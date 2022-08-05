@@ -3,10 +3,10 @@ using System;
 
 namespace SSOService.Models.Domains
 {
-    // permission to entites for roles
-    public class RolePermission : Base
+
+    public class UserRole : Base
     {
+        public Guid UserId { get; set; }
         public Guid RoleId { get; set; }
-        public Guid PermissionId { get; set; }
     }
 }

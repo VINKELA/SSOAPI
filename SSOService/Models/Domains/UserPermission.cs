@@ -1,12 +1,13 @@
 ﻿using SSOMachine.Models.Domains;
+using System;
 
 namespace SSOService.Models.Domains
 {
     //This is the user permissions
     public class UserPermission : Base
     {
-        public long UserId { get; set; }
-        public long PermissionId { get; set; }
+        public Guid UserId { get; set; }
+        public Guid PermissionId { get; set; }
 
     }
 }

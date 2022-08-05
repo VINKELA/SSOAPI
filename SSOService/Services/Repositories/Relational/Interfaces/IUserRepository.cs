@@ -14,6 +14,7 @@ namespace SSOService.Services.Repositories.Relational.Implementations
         Task<Response<IEnumerable<GetUserDTO>>> Get(string name, string email,
    string phoneNumber, string client);
         Task<Response<GetUserDTO>> Update(Guid id, UpdateUserDTO user);
-
+        Task<Response<GetUserDTO>> Get(string emailOrUsername);
+        Task<GetUserDTO> GetUserByEmailOrUsername(string emailOrUsername);
     }
 }

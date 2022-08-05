@@ -33,6 +33,9 @@ namespace SSOService.Models.DbContexts
         public virtual DbSet<RoleClaim> RoleClaims { get; set; }
         public virtual DbSet<RolePermission> RolePermissions { get; set; }
         public virtual DbSet<UserClient> UserClients { get; set; }
+        public virtual DbSet<RefreshToken> RefreshTokens { get; set; }
+        public virtual DbSet<UserRole> UserRoles { get; set; }
+        public virtual DbSet<Entity> Entities { get; set; }
 
         public virtual async Task<int> SaveAndAuditChangesAsync(Guid userId)
         {

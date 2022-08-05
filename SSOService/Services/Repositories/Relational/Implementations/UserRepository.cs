@@ -200,6 +200,19 @@ namespace SSOService.Services.Repositories.Relational.Implementations
                 return _response.FailedResponse(ReturnType, string.Format(ValidationConstants.FieldNotFound, ClassNames.User));
             return _response.SuccessResponse(Todto(current));
         }
+        public async Task<Response<GetUserDTO>> Get(string emailOrUsername)
+        {
+            var current = await GetUserByEmailOrUsername(emailOrUsername);
+            if (current == null)
+                return _response.FailedResponse(ReturnType, string.Format(ValidationConstants.FieldNotFound, ClassNames.User));
+            return _response.SuccessResponse(current);
+        }
+        public async Task<GetUserDTO> GetUserByEmailOrUsername(string emailOrUsername)
+        {
+            var current = await _db.Users.FirstOrDefaultAsync(x => x.Email == emailOrUsername || x.UserName == emailOrUsername);
+            return Todto(current);
+        }
+
         public async Task<Response<IEnumerable<GetUserDTO>>> Get(string name, string email,
             string phoneNumber, string client)
         {
@@ -220,9 +233,19 @@ namespace SSOService.Services.Repositories.Relational.Implementations
         }
         private GetUserDTO Todto(User user)
         {
+            if (user == null) return null;
+            var data = new List<UserClientDTO>();
+            var roleData = new List<UserRoleDTO>();
             var clients = _db.Clients.Where(x => !x.IsDeleted);
             var userClients = _db.UserClients.Where(x => x.UserId == user.Id).ToList();
-            var data = new List<UserClientDTO>();
+            var roles = _db.UserRoles.Where(x => x.UserId == user.Id).ToList();
+            var userRoles = _db.Roles.Where(x => roles.Select(y => y.Id).Contains(x.Id)).ToList();
+            roleData.AddRange(userRoles.Select(x => new UserRoleDTO
+            {
+                RoleId = x.Id,
+                ClientId = x.ClientId,
+                RoleName = x.Name
+            }));
             foreach (var client in userClients)
             {
                 var currentClient = clients.FirstOrDefault(y => y.Id == client.ClientId);
@@ -246,8 +269,9 @@ namespace SSOService.Services.Repositories.Relational.Implementations
                 IsActive = user.IsActive,
                 Clients = data,
                 Id = user.Id,
-                Image = user.FilePath != null ? _fileRepository.Get(user.FilePath, FileType.UserImage) : null
-
+                Image = user.FilePath != null ? _fileRepository.Get(user.FilePath, FileType.UserImage) : null,
+                PasswordHash = user.PasswordHash,
+                UserRoles = roleData
             };
         }
         private static bool ValidatePassword(string password)

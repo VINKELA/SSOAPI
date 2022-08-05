@@ -8,7 +8,9 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using SSOService.MiddleWares;
+using SSOService.Models.Constants;
 using SSOService.Models.DbContexts;
+using SSOService.Services.General.Implementation;
 using SSOService.Services.General.Interfaces;
 using SSOService.Services.Repositories.NonRelational.Implementations;
 using SSOService.Services.Repositories.NonRelational.Interfaces;
@@ -20,6 +22,11 @@ namespace SSOService
 {
     public class Startup
     {
+        private const string APPName = "SSOService";
+        private const string Version = "v1";
+        private const string DBConnection = "DefaultConnection";
+        private const string SwaggerUrl = "/swagger/v1/swagger.json";
+
         public Startup(IConfiguration configuration)
         {
             Configuration = configuration;
@@ -31,17 +38,20 @@ namespace SSOService
         public void ConfigureServices(IServiceCollection services)
         {
             services.AddDbContext<SSODbContext>(options =>
-             options.UseSqlServer(Configuration.GetConnectionString("DefaultConnection")));
+             options.UseSqlServer(Configuration.GetConnectionString(DBConnection)));
 
             services.AddControllers();
             services.AddSwaggerGen(c =>
             {
-                c.SwaggerDoc("v1", new OpenApiInfo { Title = "SSOService", Version = "v1" });
+                c.SwaggerDoc(Version, new OpenApiInfo { Title = APPName, Version = Version });
             });
             services.AddScoped<IClientRepository, ClientRepository>();
             services.AddScoped<IServiceResponse, ServiceReponse>();
             services.AddScoped<IUserRepository, UserRepository>();
             services.AddScoped<IFileRepository, FileServer>();
+            services.AddScoped<IToken, TokenService>();
+            services.AddScoped<IAuth, AuthService>();
+
             services.AddAuthentication
             (JwtBearerDefaults.AuthenticationScheme)
             .AddJwtBearer(options =>
@@ -49,12 +59,11 @@ namespace SSOService
                 options.TokenValidationParameters = new TokenValidationParameters
                 {
                     ValidateIssuer = true,
-                    ValidateAudience = true,
+                    ValidateAudience = false,
                     ValidateLifetime = true,
                     ValidateIssuerSigningKey = true,
-                    ValidIssuer = Configuration["Jwt:Issuer"],
-                    ValidAudience = Configuration["Jwt:Issuer"],
-                    IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(Configuration["Jwt:Key"]))
+                    ValidIssuer = Configuration[JWTConstants.Issuer],
+                    IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(Configuration[JWTConstants.Key]))
                 };
             });
 
@@ -68,7 +77,7 @@ namespace SSOService
             {
                 app.UseDeveloperExceptionPage();
                 app.UseSwagger();
-                app.UseSwaggerUI(c => c.SwaggerEndpoint("/swagger/v1/swagger.json", "SSOService v1"));
+                app.UseSwaggerUI(c => c.SwaggerEndpoint(SwaggerUrl, APPName));
             }
 
             app.UseHttpsRedirection();

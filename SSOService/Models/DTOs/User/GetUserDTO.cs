@@ -12,8 +12,12 @@ namespace SSOService.Models.DTOs.User
         public string Email { get; set; }
         public string PhoneNumber { get; set; }
         public string UserName { get; set; }
+        public string PasswordHash { get; set; }
         public List<UserClientDTO> Clients { get; set; }
         public bool IsActive { get; set; }
         public byte[] Image { get; set; }
+        public List<UserRoleDTO> UserRoles { get; set; }
+
     }
 }
+

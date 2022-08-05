@@ -23,11 +23,15 @@
     <PackageReference Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" Version="1.11.1" />
     <PackageReference Include="Microsoft.VisualStudio.Web.CodeGeneration.Design" Version="5.0.2" />
     <PackageReference Include="Swashbuckle.AspNetCore" Version="5.6.3" />
+    <PackageReference Include="System.Configuration.ConfigurationManager" Version="6.0.0" />
   </ItemGroup>
 
   <ItemGroup>
     <Folder Include="Helpers\" />
-    <Folder Include="Models\DTOs\Auth\LoginDTO\" />
+    <Folder Include="Models\DTOs\Service\" />
+    <Folder Include="Models\DTOs\Suscription\" />
+    <Folder Include="Models\DTOs\Permission\" />
+    <Folder Include="Models\DTOs\Role\" />
     <Folder Include="Models\Enums\Dictionary\" />
   </ItemGroup>
 

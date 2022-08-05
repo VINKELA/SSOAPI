@@ -1,6 +1,6 @@
 ﻿namespace SSOService.Constants
 {
-    public static class ClaimTypes1
+    public static class AppClaimTypes
     {
         public const string Permission = "permission";
     }

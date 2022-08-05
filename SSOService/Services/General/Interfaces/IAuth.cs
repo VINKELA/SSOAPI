@@ -1,11 +1,13 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
+﻿using SSOService.Models;
+using SSOService.Models.DTOs.Audit;
+using SSOService.Models.DTOs.Auth;
 using System.Threading.Tasks;
 
 namespace SSOService.Services.General.Interfaces
 {
-    public class IAuth
+    public interface IAuth
     {
+        Task<Response<TokenDTO>> Login(LoginDTO user);
+
     }
 }
