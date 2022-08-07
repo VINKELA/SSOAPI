@@ -6,6 +6,11 @@ namespace SSOMachine.Models.Domains
     // A business that has users this sso, this is our customers
     public class Client : EntityTracking
     {
+        public Client()
+        {
+            Code = Guid.NewGuid().ToString();
+        }
+
         public string Name { get; set; }
         public string Address { get; set; }
         public string Country { get; set; }
@@ -17,6 +22,8 @@ namespace SSOMachine.Models.Domains
         public string LogoUrl { get; set; }
         public string Motto { get; set; }
         public Guid? ParentClient { get; set; }
+        public string Code { set; get; }
+
 
     }
 }

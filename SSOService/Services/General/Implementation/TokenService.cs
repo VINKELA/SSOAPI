@@ -29,24 +29,26 @@ namespace SSOService.Services.General.Implementation
 
         public async Task<TokenDTO> BuildToken(GetUserDTO user)
         {
-            var id = Guid.NewGuid();
+            var code = Guid.NewGuid().ToString();
             var claims = new List<Claim>
             {
-                new Claim(ClaimTypes.Name, $"{user.FirstName} {user.LastName}"),
+                new Claim(ClaimTypes.Name, user.FirstName),
+                new Claim(ClaimTypes.Surname, user.LastName),
                 new Claim(ClaimTypes.NameIdentifier, user.UserName),
-                new Claim(ClaimTypes.PrimarySid, id.ToString()),
+                new Claim(ClaimTypes.Email, user.Email),
+                new Claim(ClaimTypes.MobilePhone, user.PhoneNumber)
              };
             claims.AddRange(user.UserRoles
                 .Select(x => new Claim(ClaimTypes.Role, x.RoleName,
-                ClaimValueTypes.String, x.ClientId.ToString())).ToList());
+                ClaimValueTypes.String, x.Code)).ToList());
             var securityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(Configuration[JWTConstants.Key]));
             var credentials = new SigningCredentials(securityKey, SecurityAlgorithms.HmacSha256Signature);
             var tokenDescriptor = new JwtSecurityToken(Configuration[JWTConstants.Issuer], null, claims,
                 expires: DateTime.Now.AddMinutes(EXPIRY_DURATION_MINUTES), signingCredentials: credentials);
-            await SaveRefreshToken(id, user.Id);
+            await SaveRefreshToken(code, user.Id);
             var tokenDTO = new TokenDTO
             {
-                RefreshToken = id.ToString(),
+                RefreshToken = code,
                 Token = new JwtSecurityTokenHandler().WriteToken(tokenDescriptor)
             };
             return tokenDTO;
@@ -74,12 +76,12 @@ namespace SSOService.Services.General.Implementation
             }
             return true;
         }
-        private async Task SaveRefreshToken(Guid token, Guid userId)
+        private async Task SaveRefreshToken(string token, Guid userId)
         {
             var newToken = new RefreshToken
             {
-                TokenId = token,
-                UserId = userId
+                UserId = userId,
+                Token = token
             };
             _db.RefreshTokens.Add(newToken);
             await _db.SaveAndAuditChangesAsync(userId);

@@ -11,6 +11,7 @@ using SSOService.Models.DTOs.User;
 using SSOService.Models.Enums;
 using SSOService.Services.General.Interfaces;
 using SSOService.Services.Repositories.NonRelational.Interfaces;
+using SSOService.Services.Repositories.Relational.Interfaces;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -30,6 +31,7 @@ namespace SSOService.Services.Repositories.Relational.Implementations
         private const string Confirmation = "Confirmation";
         private const string PasswordValidation = "password must be 7 character long, " +
             "contain lowercase, upper case and special character";
+        private const string PhonefNumberValidation = @"^\(?([0-9]{3})\)?[-. ]?([0-9]{3})[-. ]?([0-9]{4})$";
         private readonly SSODbContext _db;
         private readonly IServiceResponse _response;
         private readonly IFileRepository _fileRepository;
@@ -242,8 +244,7 @@ namespace SSOService.Services.Repositories.Relational.Implementations
             var userRoles = _db.Roles.Where(x => roles.Select(y => y.Id).Contains(x.Id)).ToList();
             roleData.AddRange(userRoles.Select(x => new UserRoleDTO
             {
-                RoleId = x.Id,
-                ClientId = x.ClientId,
+                Code = x.Code,
                 RoleName = x.Name
             }));
             foreach (var client in userClients)
@@ -313,7 +314,7 @@ namespace SSOService.Services.Repositories.Relational.Implementations
         }
         private static bool IsPhoneNumberValid(string phoneNumber)
         {
-            var re = @"^\(?([0-9]{3})\)?[-. ]?([0-9]{3})[-. ]?([0-9]{4})$";
+            var re = PhonefNumberValidation;
 
             return Regex.IsMatch(phoneNumber, re);
         }

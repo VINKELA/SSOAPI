@@ -2,7 +2,7 @@
 using SSOService.Models;
 using SSOService.Models.DTOs.Auth;
 using SSOService.Services.General.Interfaces;
-using SSOService.Services.Repositories.Relational.Implementations;
+using SSOService.Services.Repositories.Relational.Interfaces;
 using System.Threading.Tasks;
 
 namespace SSOService.Services.General.Implementation

@@ -16,6 +16,8 @@ using SSOService.Services.Repositories.NonRelational.Implementations;
 using SSOService.Services.Repositories.NonRelational.Interfaces;
 using SSOService.Services.Repositories.Relational.Implementations;
 using SSOService.Services.Repositories.Relational.Interfaces;
+using System;
+using System.Collections.Generic;
 using System.Text;
 
 namespace SSOService
@@ -66,6 +68,47 @@ namespace SSOService
                     IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(Configuration[JWTConstants.Key]))
                 };
             });
+            services.AddSwaggerGen(c =>
+            {
+                c.SwaggerDoc("DOC v1", new OpenApiInfo
+                {
+                    Version = "v1",
+                    Title = "SSO API Documentation",
+                    Description = "SSO api documentation",
+                    TermsOfService = new Uri("https://robotnigeria.com"),
+                    License = new OpenApiLicense
+                    {
+                        Name = "ROBOT",
+                        Url = new Uri("https://robotnigeria.com")
+                    },
+                });
+                c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+                {
+                    In = ParameterLocation.Header,
+                    Description = "Enter JWT with Bearer token into this field",
+                    Name = "Authorization",
+                    Type = SecuritySchemeType.ApiKey
+                });
+                c.AddSecurityRequirement(new OpenApiSecurityRequirement()
+                 {
+                    {
+                        new OpenApiSecurityScheme
+                        {
+                            Reference = new OpenApiReference
+                            {
+                                Type = ReferenceType.SecurityScheme,
+                                Id = "Bearer",
+                            },
+                            Scheme = "oauth2",
+                            Name = "Bearer",
+                            In = ParameterLocation.Header,
+                        },
+                        new List<string>()
+                    }
+                 });
+            });
+
+
 
 
         }
@@ -81,10 +124,9 @@ namespace SSOService
             }
 
             app.UseHttpsRedirection();
-
             app.UseRouting();
-
             app.UseAuthorization();
+            app.UseMiddleware<JWTMiddleware>();
             app.UseMiddleware<ErrorHandlerMiddleware>();
             app.UseEndpoints(endpoints =>
             {

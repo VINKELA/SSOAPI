@@ -4,7 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
-namespace SSOService.Services.Repositories.Relational.Implementations
+namespace SSOService.Services.Repositories.Relational.Interfaces
 {
     public interface IUserRepository
     {
