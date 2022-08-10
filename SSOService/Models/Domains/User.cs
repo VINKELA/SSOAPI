@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace SSOMachine.Models.Domains
+namespace SSOService.Models.Domains
 {
     // This are users of the services
     public class User : EntityTracking

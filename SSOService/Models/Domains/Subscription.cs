@@ -1,7 +1,7 @@
 ﻿using SSOService.Models.Enums;
 using System;
 
-namespace SSOMachine.Models.Domains
+namespace SSOService.Models.Domains
 {
     // subscription refers to a combination of services
     public class Subscription : EntityTracking

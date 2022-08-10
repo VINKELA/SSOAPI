@@ -1,7 +1,8 @@
 ﻿namespace SSOService.Models.Enums
 {
-    public enum ApplicationService
+    public enum Scope
     {
-        OCR
+        all,
+        single
     }
 }

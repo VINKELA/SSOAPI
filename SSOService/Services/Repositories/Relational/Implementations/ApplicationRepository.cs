@@ -1,6 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
-using SSOMachine.Models.Domains;
-using SSOMachine.Models.Enums;
+using SSOService.Models.Domains;
+using SSOService.Models.Enums;
 using SSOService.Extensions;
 using SSOService.Models;
 using SSOService.Models.Constants;
@@ -36,7 +36,7 @@ namespace SSOService.Services.Repositories.Relational.Implementations
                 Name = applicationDTO.Name,
                 ApplicationType = applicationDTO.ApplicationType,
                 URL = applicationDTO.URL,
-                ServiceType = applicationDTO.ServiceType,
+                ServiceTypeId = applicationDTO.ServiceTypeId,
                 ClientId = applicationDTO.ClientId,
                 CreatedBy = currentUser.Email
             };
@@ -54,7 +54,7 @@ namespace SSOService.Services.Repositories.Relational.Implementations
                 Name = applicationDTO.Name?.ToLower() ?? currentApplication.Name,
                 ApplicationType = applicationDTO.ApplicationType ?? currentApplication.ApplicationType,
                 URL = applicationDTO.URL?.ToLower() ?? currentApplication.URL,
-                ServiceType = applicationDTO.ServiceType ?? currentApplication.ServiceType,
+                ServiceTypeId = applicationDTO.ServiceTypeId ?? currentApplication.ServiceTypeId,
                 LastModifiedBy = currentUser.Email,
                 Modified = DateTime.Now
             };
@@ -93,7 +93,7 @@ namespace SSOService.Services.Repositories.Relational.Implementations
             return _response.SuccessResponse(ToDto(current));
         }
         public async Task<Response<IEnumerable<GetApplicationDTO>>> Get(string name, ApplicationType? applicationType,
-            ServiceType? serviceType)
+            Entity? serviceType)
         {
             var user = _userRepository.GetLoggedInUser();
             var list = await _db.Applications.Where(x => !x.IsDeleted).ToListAsync();
@@ -104,8 +104,6 @@ namespace SSOService.Services.Repositories.Relational.Implementations
             }
             if (applicationType != null)
                 list = list.Where(x => x.ApplicationType == x.ApplicationType).ToList();
-            if (serviceType != null)
-                list = list.Where(x => x.ServiceType == x.ServiceType).ToList();
             return _response.SuccessResponse(list.Select(x => ToDto(x)));
         }
 
@@ -117,7 +115,6 @@ namespace SSOService.Services.Repositories.Relational.Implementations
                 ClientId = application.ClientId,
                 Id = application.Id,
                 Name = application.Name,
-                ServiceType = application.ServiceType.DisplayName(),
                 URL = application.URL
             };
         }

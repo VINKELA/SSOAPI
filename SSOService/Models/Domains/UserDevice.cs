@@ -1,7 +1,7 @@
-﻿using SSOMachine.Models.Enums;
+﻿using SSOService.Models.Enums;
 using System;
 
-namespace SSOMachine.Models.Domains
+namespace SSOService.Models.Domains
 {
     //This is the devices used by a user to access the system
     public class UserDevice : Base

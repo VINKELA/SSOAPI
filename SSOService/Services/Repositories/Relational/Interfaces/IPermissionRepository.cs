@@ -1,11 +1,18 @@
-﻿using System;
+﻿using SSOService.Models;
+using SSOService.Models.DTOs.Permission;
+using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Threading.Tasks;
 
 namespace SSOService.Services.Repositories.Relational.Interfaces
 {
-    public class IPermissionRepository
+    public interface IPermissionRepository
     {
+        Task<Response<IEnumerable<GetPermissionDTO>>> Get(string name);
+        Task<Response<GetPermissionDTO>> Get(Guid id);
+        Task<Response<GetPermissionDTO>> ChangeState(Guid id, bool deactivate = false, bool delete = false);
+        Task<Response<GetPermissionDTO>> Update(Guid id, UpdatePermissionDTO permissionDTO);
+        Task<Response<GetPermissionDTO>> Create(CreatePermissionDTO permissionDTO);
+
     }
 }

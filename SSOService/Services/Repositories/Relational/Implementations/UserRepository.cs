@@ -1,6 +1,5 @@
 ﻿using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
-using SSOMachine.Models.Domains;
 using SSOService.Extensions;
 using SSOService.Helpers;
 using SSOService.Models;

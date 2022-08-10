@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace SSOMachine.Models.Domains
+namespace SSOService.Models.Domains
 {
     public class Base
     {

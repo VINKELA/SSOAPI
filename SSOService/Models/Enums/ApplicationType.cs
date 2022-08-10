@@ -1,15 +1,9 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-
-namespace SSOMachine.Models.Enums
+﻿namespace SSOService.Models.Enums
 {
     public enum ApplicationType
     {
-        Service, 
+        Service,
         ThirdPartyService,
         Client
-
     }
 }

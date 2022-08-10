@@ -1,5 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
-using SSOMachine.Models.Domains;
+using SSOService.Models.Domains;
 using SSOService.Extensions;
 using SSOService.Models;
 using SSOService.Models.Constants;

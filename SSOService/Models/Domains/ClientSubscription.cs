@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace SSOMachine.Models.Domains
+namespace SSOService.Models.Domains
 {
     //This refers to the suscriptions by a customer or client
     public class ClientSubscription : EntityTracking

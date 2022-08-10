@@ -1,7 +1,7 @@
 ﻿using SSOService.Models.Enums;
 using System;
 
-namespace SSOMachine.Models.Domains
+namespace SSOService.Models.Domains
 {
     //This is the user logins
     public class UserLogin : Base

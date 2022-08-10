@@ -1,4 +1,4 @@
-﻿using SSOMachine.Models.Domains;
+﻿using SSOService.Models.Domains;
 using System;
 
 namespace SSOService.Models.Domains

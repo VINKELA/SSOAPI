@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace SSOMachine.Models.Domains
+namespace SSOService.Models.Domains
 {
     //A client can create custom permission for users using role claim
     public class RoleClaim : Base

@@ -1,4 +1,4 @@
-﻿namespace SSOMachine.Models.Enums
+﻿namespace SSOService.Models.Enums
 {
     public enum DeviceType
     {

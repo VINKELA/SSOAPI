@@ -1,6 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using SSOMachine.Models.Domains;
-using SSOMachine.Models.Enums;
+using SSOService.Models.Domains;
+using SSOService.Models.Enums;
 using SSOService.Extensions;
 using SSOService.Models;
 using SSOService.Models.DTOs.Application;
@@ -24,7 +24,7 @@ namespace SSOService.Controllers
         // GET: api/Applications
         [HttpGet]
         public ActionResult<Response<IEnumerable<GetApplicationDTO>>> GetApplications(string name = null,
-            ApplicationType? applicationType = null, ServiceType? serviceType = null)
+            ApplicationType? applicationType = null, Entity? serviceType = null)
             => Ok(_applicationRepository.Get(name, applicationType, serviceType));
 
         // GET: api/Applications/5

@@ -96,15 +96,12 @@ namespace SSOService.Services.Repositories.Relational.Implementations
             return _response.SuccessResponse(list.Select(x => ToDto(x)));
         }
 
-        private static GetServiceDTO ToDto(Service service)
+        private static GetServiceDTO ToDto(Service service) => new()
         {
-            return new GetServiceDTO
-            {
-                ClientId = service.ClientId,
-                Id = service.Id,
-                Name = service.Name
-            };
-        }
+            ClientId = service.ClientId,
+            Id = service.Id,
+            Name = service.Name
+        };
         private async Task<bool> HasChanged(Service service)
         {
             var lastest = await Exists(service.Id);

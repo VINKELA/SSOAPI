@@ -1,8 +1,8 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using SSOMachine.Models.Domains;
 using SSOService.Extensions;
 using SSOService.Models;
+using SSOService.Models.Domains;
 using SSOService.Models.DTOs.User;
 using SSOService.Services.Repositories.Relational.Interfaces;
 using System;
@@ -46,10 +46,10 @@ namespace SSOService.Controllers
         public async Task<ActionResult<Response<GetUserDTO>>> Deactivate(Guid id)
             => Ok(await _user.ChangeState(id, true));
 
-        [AllowAnonymous]
         // POST: api/Users
         // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
         [HttpPost]
+        [AllowAnonymous]
         public async Task<ActionResult<Response<GetUserDTO>>> Post([FromForm] CreateUserDTO user)
             => Ok(await _user.Save(user));
 

@@ -1,5 +1,4 @@
-﻿using SSOMachine.Models.Enums;
-using SSOService.Models.Enums;
+﻿using SSOService.Models.Enums;
 using System;
 
 namespace SSOService.Models.DTOs.Subscription

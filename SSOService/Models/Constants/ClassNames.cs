@@ -9,5 +9,9 @@
         public const string Role = "Role";
         public const string Service = "Service";
         public const string Subscription = "Subscription";
+        public const string Permission = "Permission";
+        public const string ServiceType = "ServiceType";
+
+
     }
 }
