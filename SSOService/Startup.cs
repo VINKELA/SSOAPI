@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -53,9 +54,14 @@ namespace SSOService
             services.AddScoped<IFileRepository, FileServer>();
             services.AddScoped<IToken, TokenService>();
             services.AddScoped<IAuth, AuthService>();
+            services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
+            services.AddScoped<IApplicationRepository, ApplicationRepository>();
 
-            services.AddAuthentication
-            (JwtBearerDefaults.AuthenticationScheme)
+            services.AddAuthentication(options =>
+            {
+                options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+                options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+            })
             .AddJwtBearer(options =>
             {
                 options.TokenValidationParameters = new TokenValidationParameters
@@ -126,8 +132,8 @@ namespace SSOService
             app.UseHttpsRedirection();
             app.UseRouting();
             app.UseAuthorization();
-            app.UseMiddleware<JWTMiddleware>();
             app.UseMiddleware<ErrorHandlerMiddleware>();
+            app.UseMiddleware<JWTMiddleware>();
             app.UseEndpoints(endpoints =>
             {
                 endpoints.MapControllers();

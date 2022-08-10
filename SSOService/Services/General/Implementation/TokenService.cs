@@ -1,5 +1,6 @@
 ﻿using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
+using SSOService.Constants;
 using SSOService.Models.Constants;
 using SSOService.Models.DbContexts;
 using SSOService.Models.Domains;
@@ -32,11 +33,11 @@ namespace SSOService.Services.General.Implementation
             var code = Guid.NewGuid().ToString();
             var claims = new List<Claim>
             {
-                new Claim(ClaimTypes.Name, user.FirstName),
-                new Claim(ClaimTypes.Surname, user.LastName),
-                new Claim(ClaimTypes.NameIdentifier, user.UserName),
-                new Claim(ClaimTypes.Email, user.Email),
-                new Claim(ClaimTypes.MobilePhone, user.PhoneNumber)
+                new Claim(AppClaimTypes.FirstName, user.FirstName),
+                new Claim(AppClaimTypes.SurName, user.LastName),
+                new Claim(AppClaimTypes.UserName, user.UserName),
+                new Claim(AppClaimTypes.Email, user.Email),
+                new Claim(AppClaimTypes.Phone, user.PhoneNumber)
              };
             claims.AddRange(user.UserRoles
                 .Select(x => new Claim(ClaimTypes.Role, x.RoleName,

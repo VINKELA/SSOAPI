@@ -26,17 +26,20 @@ namespace SSOService.Services.Repositories.Relational.Implementations
         private readonly IServiceResponse _response;
         private readonly GetClientDTO ReturnType = new();
         private readonly IFileRepository _fileRepository;
+        private readonly IUserRepository _userRepository;
 
 
-        public ClientRepository(SSODbContext db, IServiceResponse response, IFileRepository fileRepository)
+        public ClientRepository(SSODbContext db, IServiceResponse response, IFileRepository fileRepository, IUserRepository userRepository)
         {
             _db = db;
             _response = response;
             _fileRepository = fileRepository;
+            _userRepository = userRepository;
         }
 
         public async Task<Response<GetClientDTO>> Save(CreateClientDTO client)
         {
+
             if (string.IsNullOrEmpty(client.Name))
                 return _response.FailedResponse(ReturnType,
                 string.Format(ValidationConstants.InvalidFieldFormatResponse, Name));
@@ -63,14 +66,14 @@ namespace SSOService.Services.Repositories.Relational.Implementations
                 LogoUrl = filePath
             };
             _db.Clients.Add(newClient);
-            var result = await _db.SaveAndAuditChangesAsync(Guid.NewGuid());
+            var result = await _db.SaveAndAuditChangesAsync(_userRepository.GetLoggedInUser().Id);
             return result > 0 ? _response.SuccessResponse(Todto(newClient)) :
                 _response.FailedResponse(ReturnType);
         }
 
         public async Task<Response<GetClientDTO>> ChangeState(Guid id, bool deactivate = false, bool delete = false)
         {
-            var current = Exists(id);
+            var current = await Exists(id);
             if (current == null)
                 return _response.FailedResponse(ReturnType, string.Format(ValidationConstants.FieldNotFound, EntityName));
             if (deactivate) current.IsActive = !deactivate;
@@ -80,11 +83,12 @@ namespace SSOService.Services.Repositories.Relational.Implementations
                 current.IsDeleted = delete;
             }
             else current.IsActive = true;
-            if (HasChanged(current))
+            var hasChanged = await HasChanged(current);
+            if (hasChanged)
                 return _response.FailedResponse(ReturnType, string.Format(ValidationConstants.EntityChangedByAnotherUser, current.Name));
             current.ConcurrencyStamp = Guid.NewGuid();
             _db.Clients.Update(current);
-            var result = await _db.SaveAndAuditChangesAsync(Guid.NewGuid());
+            var result = await _db.SaveAndAuditChangesAsync(_userRepository.GetLoggedInUser().Id);
             return result > 0 ? _response.SuccessResponse(Todto(current)) :
             _response.FailedResponse(ReturnType);
         }
@@ -103,9 +107,9 @@ namespace SSOService.Services.Repositories.Relational.Implementations
             return _response.SuccessResponse(returnType);
         }
 
-        public Response<GetClientDTO> Get(Guid id)
+        public async Task<Response<GetClientDTO>> Get(Guid id)
         {
-            var current = Exists(id);
+            var current = await Exists(id);
             if (current == null)
                 return _response.FailedResponse(ReturnType, string.Format(ValidationConstants.FieldNotFound, EntityName));
             return _response.SuccessResponse(Todto(current));
@@ -141,7 +145,7 @@ namespace SSOService.Services.Repositories.Relational.Implementations
         public async Task<Response<GetClientDTO>> Update(Guid id, UpdateClientDTO client)
         {
             var returnType = new GetClientDTO();
-            var current = Exists(id);
+            var current = await Exists(id);
             if (current == null)
                 return _response.FailedResponse(returnType, string.Format(ValidationConstants.FieldNotFound, EntityName));
             if (!string.IsNullOrEmpty(client.ContactPersonEmail) && !client.ContactPersonEmail.IsValidEmailFormat())
@@ -175,22 +179,23 @@ namespace SSOService.Services.Repositories.Relational.Implementations
             current.Name = string.IsNullOrEmpty(client.Name) ? current.Name : client.Name.Trim().ToUpper();
             current.ParentClient = string.IsNullOrEmpty(client.ParentClientId) ? parentId : current.ParentClient;
             current.Modified = DateTime.Now;
-            if (HasChanged(current))
+            var hasChanged = await HasChanged(current);
+            if (hasChanged)
                 return _response.FailedResponse(returnType, string.Format(ValidationConstants.EntityChangedByAnotherUser, client.Name));
             current.ConcurrencyStamp = Guid.NewGuid();
             _db.Clients.Update(current);
-            var result = await _db.SaveAndAuditChangesAsync(Guid.NewGuid());
+            var result = await _db.SaveAndAuditChangesAsync(_userRepository.GetLoggedInUser().Id);
             return result > 0 ? _response.SuccessResponse(Todto(current)) :
             _response.FailedResponse(returnType);
         }
-        private Client Exists(Guid id)
+        private async Task<Client> Exists(Guid id)
         {
-            var current = _db.Clients.FirstOrDefault(x => x.Id == id && !x.IsDeleted);
+            var current = await _db.Clients.FirstOrDefaultAsync(x => x.Id == id && !x.IsDeleted);
             return current;
         }
-        private bool HasChanged(Client client)
+        private async Task<bool> HasChanged(Client client)
         {
-            var lastest = Exists(client.Id);
+            var lastest = await Exists(client.Id);
             return !(client.ConcurrencyStamp == lastest.ConcurrencyStamp);
         }
 

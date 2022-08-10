@@ -1,12 +1,10 @@
-﻿using System;
+﻿using Microsoft.AspNetCore.Mvc;
+using SSOService.Models;
+using SSOService.Models.DTOs.Entity;
+using SSOService.Services.Repositories.Relational.Interfaces;
+using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Threading.Tasks;
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using SSOService.Models.DbContexts;
-using SSOService.Models.Domains;
 
 namespace SSOService.Controllers
 {
@@ -14,95 +12,46 @@ namespace SSOService.Controllers
     [ApiController]
     public class EntitiesController : ControllerBase
     {
-        private readonly SSODbContext _context;
+        private readonly IEntityRepository _entityRepository;
 
-        public EntitiesController(SSODbContext context)
-        {
-            _context = context;
-        }
+        public EntitiesController(IEntityRepository entityRepository)
+            => _entityRepository = entityRepository;
 
         // GET: api/Entities
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<Entity>>> GetEntities()
-        {
-            return await _context.Entities.ToListAsync();
-        }
+        public async Task<ActionResult<Response<IEnumerable<GetEntityDTO>>>> GetEntities(string name = null)
+            => Ok(await _entityRepository.Get(name));
 
         // GET: api/Entities/5
         [HttpGet("{id}")]
-        public async Task<ActionResult<Entity>> GetEntity(Guid id)
-        {
-            var entity = await _context.Entities.FindAsync(id);
-
-            if (entity == null)
-            {
-                return NotFound();
-            }
-
-            return entity;
-        }
+        public async Task<ActionResult<Response<GetEntityDTO>>> GetEntity(Guid id)
+            => Ok(await _entityRepository.Get(id));
 
         // PUT: api/Entities/5
         // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
         [HttpPut("{id}")]
-        public async Task<IActionResult> PutEntity(Guid id, Entity entity)
-        {
-            if (id != entity.Id)
-            {
-                return BadRequest();
-            }
-
-            _context.Entry(entity).State = EntityState.Modified;
-
-            try
-            {
-                await _context.SaveChangesAsync();
-            }
-            catch (DbUpdateConcurrencyException)
-            {
-                if (!EntityExists(id))
-                {
-                    return NotFound();
-                }
-                else
-                {
-                    throw;
-                }
-            }
-
-            return NoContent();
-        }
+        public async Task<ActionResult<Response<GetEntityDTO>>> PutEntity(Guid id, UpdateEntityDTO entity)
+            => Ok(await _entityRepository.Update(id, entity));
 
         // POST: api/Entities
         // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
         [HttpPost]
-        public async Task<ActionResult<Entity>> PostEntity(Entity entity)
-        {
-            _context.Entities.Add(entity);
-            await _context.SaveChangesAsync();
-
-            return CreatedAtAction("GetEntity", new { id = entity.Id }, entity);
-        }
+        public async Task<ActionResult<Response<GetEntityDTO>>> PostEntity(CreateEntityDTO entity)
+            => Ok(await _entityRepository.Create(entity));
 
         // DELETE: api/Entities/5
         [HttpDelete("{id}")]
-        public async Task<IActionResult> DeleteEntity(Guid id)
-        {
-            var entity = await _context.Entities.FindAsync(id);
-            if (entity == null)
-            {
-                return NotFound();
-            }
+        public async Task<ActionResult<Response<GetEntityDTO>>> DeleteEntity(Guid id)
+            => Ok(await _entityRepository.ChangeState(id, false, true));
+        [HttpPatch("activate/{id}")]
+        public async Task<ActionResult<Response<GetEntityDTO>>> Activate(Guid id)
+            => Ok(await _entityRepository.ChangeState(id));
 
-            _context.Entities.Remove(entity);
-            await _context.SaveChangesAsync();
+        [HttpPatch("deactivate/{id}")]
+        public async Task<ActionResult<Response<GetEntityDTO>>> Deactivate(Guid id)
+            => Ok(await _entityRepository.ChangeState(id, true));
 
-            return NoContent();
-        }
 
-        private bool EntityExists(Guid id)
-        {
-            return _context.Entities.Any(e => e.Id == id);
-        }
+
     }
 }

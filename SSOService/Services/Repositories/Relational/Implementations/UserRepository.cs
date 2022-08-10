@@ -1,4 +1,5 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.AspNetCore.Http;
+using Microsoft.EntityFrameworkCore;
 using SSOMachine.Models.Domains;
 using SSOService.Extensions;
 using SSOService.Helpers;
@@ -35,12 +36,15 @@ namespace SSOService.Services.Repositories.Relational.Implementations
         private readonly SSODbContext _db;
         private readonly IServiceResponse _response;
         private readonly IFileRepository _fileRepository;
+        private readonly IHttpContextAccessor _httpContext;
         private readonly GetUserDTO ReturnType = new();
-        public UserRepository(IServiceResponse response, SSODbContext db, IFileRepository fileRepository)
+        public UserRepository(IServiceResponse response, SSODbContext db, IFileRepository fileRepository, IHttpContextAccessor httpContext)
         {
             _response = response;
             _db = db;
             _fileRepository = fileRepository;
+            _httpContext = httpContext;
+
         }
         public async Task<Response<GetUserDTO>> Save(CreateUserDTO user)
         {
@@ -115,7 +119,7 @@ namespace SSOService.Services.Repositories.Relational.Implementations
 
             };
             _db.Users.Add(newUser);
-            var result = await _db.SaveAndAuditChangesAsync(Guid.NewGuid());
+            var result = await _db.SaveAndAuditChangesAsync(GetLoggedInUser()?.Id);
             var createdUser = _db.Users.FirstOrDefault(x => x.Email == user.Email);
             if (createdUser != null)
             {
@@ -127,7 +131,7 @@ namespace SSOService.Services.Repositories.Relational.Implementations
         }
         public async Task<Response<GetUserDTO>> Update(Guid id, UpdateUserDTO user)
         {
-            var current = Exists(id);
+            var current = await Exists(id);
             if (current == null)
                 return _response.FailedResponse(ReturnType, string.Format(ValidationConstants.FieldNotFound, ClassNames.User));
             if (!string.IsNullOrEmpty(user.PhoneNumber) && !IsPhoneNumberValid(user.PhoneNumber))
@@ -161,11 +165,12 @@ namespace SSOService.Services.Repositories.Relational.Implementations
             current.UserName = username;
             current.Modified = DateTime.Now;
             current.FilePath = filePath;
-            if (HasChanged(current))
+            var hasChanged = await HasChanged(current);
+            if (hasChanged)
                 return _response.FailedResponse(ReturnType, string.Format(ValidationConstants.EntityChangedByAnotherUser, current.Id));
             current.ConcurrencyStamp = Guid.NewGuid();
             _db.Users.Update(current);
-            var result = await _db.SaveAndAuditChangesAsync(Guid.NewGuid());
+            var result = await _db.SaveAndAuditChangesAsync();
             if (result > 0)
             {
                 if (clients.Count > 0)
@@ -177,7 +182,7 @@ namespace SSOService.Services.Repositories.Relational.Implementations
         }
         public async Task<Response<GetUserDTO>> ChangeState(Guid id, bool deactivate = false, bool delete = false)
         {
-            var current = Exists(id);
+            var current = await Exists(id);
             if (current == null)
                 return _response.FailedResponse(ReturnType, string.Format(ValidationConstants.FieldNotFound, ClassNames.Client));
             if (deactivate) current.IsActive = !deactivate;
@@ -187,17 +192,18 @@ namespace SSOService.Services.Repositories.Relational.Implementations
                 current.IsDeleted = delete;
             }
             else current.IsActive = true;
-            if (HasChanged(current))
+            var hasChanged = await HasChanged(current);
+            if (hasChanged)
                 return _response.FailedResponse(ReturnType, string.Format(ValidationConstants.EntityChangedByAnotherUser, current.Id));
             current.ConcurrencyStamp = Guid.NewGuid();
             _db.Users.Update(current);
-            var result = await _db.SaveAndAuditChangesAsync(Guid.NewGuid());
+            var result = await _db.SaveAndAuditChangesAsync(GetLoggedInUser().Id);
             return result > 0 ? _response.SuccessResponse(Todto(current)) :
             _response.FailedResponse(ReturnType);
         }
-        public Response<GetUserDTO> Get(Guid id)
+        public async Task<Response<GetUserDTO>> Get(Guid id)
         {
-            var current = Exists(id);
+            var current = await Exists(id);
             if (current == null)
                 return _response.FailedResponse(ReturnType, string.Format(ValidationConstants.FieldNotFound, ClassNames.User));
             return _response.SuccessResponse(Todto(current));
@@ -214,10 +220,10 @@ namespace SSOService.Services.Repositories.Relational.Implementations
             var current = await _db.Users.FirstOrDefaultAsync(x => x.Email == emailOrUsername || x.UserName == emailOrUsername);
             return Todto(current);
         }
-
         public async Task<Response<IEnumerable<GetUserDTO>>> Get(string name, string email,
             string phoneNumber, string client)
         {
+            var user = GetLoggedInUser();
             var list = await _db.Users.Where(x => !x.IsDeleted).ToListAsync();
             var users = list.Select(x => Todto(x));
             if (!string.IsNullOrEmpty(name))
@@ -233,6 +239,7 @@ namespace SSOService.Services.Repositories.Relational.Implementations
                 users = users.Where(x => x.Clients.Select(x => x.ClientName).Contains(client.Trim().ToUpper()));
             return _response.SuccessResponse(users);
         }
+        public GetUserDTO GetLoggedInUser() => (GetUserDTO)_httpContext.HttpContext.Items[HttpConstants.CurrentUser];
         private GetUserDTO Todto(User user)
         {
             if (user == null) return null;
@@ -302,14 +309,14 @@ namespace SSOService.Services.Repositories.Relational.Implementations
             }
             return valid;
         }
-        private User Exists(Guid id)
+        private async Task<User> Exists(Guid id)
         {
-            var current = _db.Users.FirstOrDefault(x => x.Id == id && !x.IsDeleted);
+            var current = await _db.Users.FirstOrDefaultAsync(x => x.Id == id && !x.IsDeleted);
             return current;
         }
-        private bool HasChanged(User user)
+        private async Task<bool> HasChanged(User user)
         {
-            var lastest = Exists(user.Id);
+            var lastest = await Exists(user.Id);
             return !(user.ConcurrencyStamp == lastest.ConcurrencyStamp);
         }
         private static bool IsPhoneNumberValid(string phoneNumber)
@@ -322,10 +329,8 @@ namespace SSOService.Services.Repositories.Relational.Implementations
         {
             _db.UserClients.AddRange(clients
                .Select(x => new UserClient { UserId = userId, ClientId = x }));
-            var result = await _db.SaveAndAuditChangesAsync(Guid.NewGuid());
+            var result = await _db.SaveAndAuditChangesAsync(GetLoggedInUser().Id);
             return result > 0;
         }
-
-
     }
 }

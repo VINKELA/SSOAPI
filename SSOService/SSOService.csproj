@@ -28,10 +28,6 @@
 
   <ItemGroup>
     <Folder Include="Helpers\" />
-    <Folder Include="Models\DTOs\Service\" />
-    <Folder Include="Models\DTOs\Suscription\" />
-    <Folder Include="Models\DTOs\Permission\" />
-    <Folder Include="Models\DTOs\Role\" />
     <Folder Include="Models\Enums\Dictionary\" />
   </ItemGroup>
 

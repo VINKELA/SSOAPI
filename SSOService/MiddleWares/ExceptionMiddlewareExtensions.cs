@@ -11,6 +11,8 @@ namespace SSOService.MiddleWares
     {
         private readonly RequestDelegate _next;
         private const string ExceptionMessage = "An Error Occured Contact Admin";
+        private const string ContentType = "application/json";
+
         public ErrorHandlerMiddleware(RequestDelegate next)
         {
             _next = next;
@@ -24,7 +26,7 @@ namespace SSOService.MiddleWares
             catch (Exception error)
             {
                 var response = context.Response;
-                response.ContentType = "application/json";
+                response.ContentType = ContentType;
                 var responseModel = Response<object>.Fail(ExceptionMessage);
                 // unhandled error
                 response.StatusCode = (int)HttpStatusCode.InternalServerError;

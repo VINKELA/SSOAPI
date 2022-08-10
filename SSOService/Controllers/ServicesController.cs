@@ -1,108 +1,59 @@
-﻿using System;
+﻿using Microsoft.AspNetCore.Mvc;
+using SSOService.Extensions;
+using SSOService.Models;
+using SSOService.Models.DTOs.Service;
+using SSOService.Services.Repositories.Relational.Interfaces;
+using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Threading.Tasks;
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using SSOService.Models.DbContexts;
-using SSOService.Models.Domains;
 
 namespace SSOService.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
+    [AuthorizedRequest]
     public class ServicesController : ControllerBase
     {
-        private readonly SSODbContext _context;
+        private readonly IServiceRepository _serviceRepository;
 
-        public ServicesController(SSODbContext context)
-        {
-            _context = context;
-        }
+        public ServicesController(IServiceRepository serviceRepository)
+            => _serviceRepository = serviceRepository;
 
         // GET: api/Services
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<Service>>> GetServices()
-        {
-            return await _context.Services.ToListAsync();
-        }
+        public async Task<ActionResult<Response<IEnumerable<GetServiceDTO>>>> GetServices(string name = null)
+            => Ok(await _serviceRepository.Get(name));
 
         // GET: api/Services/5
         [HttpGet("{id}")]
-        public async Task<ActionResult<Service>> GetService(Guid id)
-        {
-            var service = await _context.Services.FindAsync(id);
-
-            if (service == null)
-            {
-                return NotFound();
-            }
-
-            return service;
-        }
+        public async Task<ActionResult<Response<GetServiceDTO>>> GetService(Guid id)
+            => Ok(await _serviceRepository.Get(id));
 
         // PUT: api/Services/5
         // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
         [HttpPut("{id}")]
-        public async Task<IActionResult> PutService(Guid id, Service service)
-        {
-            if (id != service.Id)
-            {
-                return BadRequest();
-            }
-
-            _context.Entry(service).State = EntityState.Modified;
-
-            try
-            {
-                await _context.SaveChangesAsync();
-            }
-            catch (DbUpdateConcurrencyException)
-            {
-                if (!ServiceExists(id))
-                {
-                    return NotFound();
-                }
-                else
-                {
-                    throw;
-                }
-            }
-
-            return NoContent();
-        }
+        public async Task<ActionResult<Response<GetServiceDTO>>> PutService(Guid id, UpdateServiceDTO service)
+            => Ok(await _serviceRepository.Update(id, service));
 
         // POST: api/Services
         // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
         [HttpPost]
-        public async Task<ActionResult<Service>> PostService(Service service)
-        {
-            _context.Services.Add(service);
-            await _context.SaveChangesAsync();
-
-            return CreatedAtAction("GetService", new { id = service.Id }, service);
-        }
+        public async Task<ActionResult<Response<GetServiceDTO>>> PostService(CreateServiceDTO service)
+            => Ok(await _serviceRepository.Create(service));
 
         // DELETE: api/Services/5
         [HttpDelete("{id}")]
-        public async Task<IActionResult> DeleteService(Guid id)
-        {
-            var service = await _context.Services.FindAsync(id);
-            if (service == null)
-            {
-                return NotFound();
-            }
+        public async Task<ActionResult<Response<GetServiceDTO>>> DeleteService(Guid id)
+            => Ok(await _serviceRepository.ChangeState(id, false, true));
+        [HttpPatch("activate/{id}")]
+        public async Task<ActionResult<Response<GetServiceDTO>>> Activate(Guid id)
+            => Ok(await _serviceRepository.ChangeState(id));
 
-            _context.Services.Remove(service);
-            await _context.SaveChangesAsync();
+        [HttpPatch("deactivate/{id}")]
+        public async Task<ActionResult<Response<GetServiceDTO>>> Deactivate(Guid id)
+            => Ok(await _serviceRepository.ChangeState(id, true));
 
-            return NoContent();
-        }
 
-        private bool ServiceExists(Guid id)
-        {
-            return _context.Services.Any(e => e.Id == id);
-        }
+
     }
 }

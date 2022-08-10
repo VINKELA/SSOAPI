@@ -1,5 +1,4 @@
-﻿using SSOMachine.Models.Enums;
-using System;
+﻿using System;
 
 namespace SSOService.Models.DTOs.Application
 {
@@ -7,9 +6,9 @@ namespace SSOService.Models.DTOs.Application
     {
         public Guid Id { get; set; }
         public string Name { get; set; }
-        public ApplicationType ApplicationType { get; set; }
+        public string ApplicationType { get; set; }
         public string URL { get; set; }
-        public ServiceType? ServiceType { get; set; }
+        public string ServiceType { get; set; }
         public Guid? ClientId { get; set; }
 
     }

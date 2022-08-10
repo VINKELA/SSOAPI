@@ -1,108 +1,61 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.AspNetCore.Mvc;
 using SSOMachine.Models.Domains;
-using SSOService.Models.DbContexts;
+using SSOMachine.Models.Enums;
+using SSOService.Extensions;
+using SSOService.Models;
+using SSOService.Models.DTOs.Application;
+using SSOService.Services.Repositories.Relational.Interfaces;
+using System;
+using System.Collections.Generic;
+using System.Threading.Tasks;
 
 namespace SSOService.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
+    [AuthorizedRequest]
     public class ApplicationsController : ControllerBase
     {
-        private readonly SSODbContext _context;
 
-        public ApplicationsController(SSODbContext context)
-        {
-            _context = context;
-        }
+        private readonly IApplicationRepository _applicationRepository;
+        public ApplicationsController(IApplicationRepository applicationRepository) =>
+            _applicationRepository = applicationRepository;
 
         // GET: api/Applications
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<Application>>> GetApplications()
-        {
-            return await _context.Applications.ToListAsync();
-        }
+        public ActionResult<Response<IEnumerable<GetApplicationDTO>>> GetApplications(string name = null,
+            ApplicationType? applicationType = null, ServiceType? serviceType = null)
+            => Ok(_applicationRepository.Get(name, applicationType, serviceType));
 
         // GET: api/Applications/5
         [HttpGet("{id}")]
-        public async Task<ActionResult<Application>> GetApplication(Guid id)
-        {
-            var application = await _context.Applications.FindAsync(id);
-
-            if (application == null)
-            {
-                return NotFound();
-            }
-
-            return application;
-        }
+        public ActionResult<Response<Application>> GetApplication(Guid id)
+            => Ok(_applicationRepository.Get(id));
 
         // PUT: api/Applications/5
         // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
         [HttpPut("{id}")]
-        public async Task<IActionResult> PutApplication(Guid id, Application application)
-        {
-            if (id != application.Id)
-            {
-                return BadRequest();
-            }
-
-            _context.Entry(application).State = EntityState.Modified;
-
-            try
-            {
-                await _context.SaveChangesAsync();
-            }
-            catch (DbUpdateConcurrencyException)
-            {
-                if (!ApplicationExists(id))
-                {
-                    return NotFound();
-                }
-                else
-                {
-                    throw;
-                }
-            }
-
-            return NoContent();
-        }
+        public async Task<IActionResult> PutApplication(Guid id, UpdateApplicationDTO application)
+            => Ok(await _applicationRepository.Update(id, application));
 
         // POST: api/Applications
         // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
         [HttpPost]
-        public async Task<ActionResult<Application>> PostApplication(Application application)
-        {
-            _context.Applications.Add(application);
-            await _context.SaveChangesAsync();
-
-            return CreatedAtAction("GetApplication", new { id = application.Id }, application);
-        }
+        public async Task<ActionResult<GetApplicationDTO>> PostApplication(CreateApplicationDTO application)
+            => Ok(await _applicationRepository.Create(application));
 
         // DELETE: api/Applications/5
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteApplication(Guid id)
-        {
-            var application = await _context.Applications.FindAsync(id);
-            if (application == null)
-            {
-                return NotFound();
-            }
+            => Ok(await _applicationRepository.ChangeState(id, false, true));
+        [HttpPatch("activate/{id}")]
+        public async Task<ActionResult<Response<GetApplicationDTO>>> Activate(Guid id)
+            => Ok(await _applicationRepository.ChangeState(id));
 
-            _context.Applications.Remove(application);
-            await _context.SaveChangesAsync();
+        [HttpPatch("deactivate/{id}")]
+        public async Task<ActionResult<Response<GetApplicationDTO>>> Deactivate(Guid id)
+            => Ok(await _applicationRepository.ChangeState(id, true));
 
-            return NoContent();
-        }
 
-        private bool ApplicationExists(Guid id)
-        {
-            return _context.Applications.Any(e => e.Id == id);
-        }
     }
 }

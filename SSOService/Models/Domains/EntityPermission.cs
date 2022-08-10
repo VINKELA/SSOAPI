@@ -5,7 +5,7 @@ using System;
 namespace SSOService.Models.Domains
 {
     //permission for entities, each applications exposes entites and rights
-    public class Permission : EntityTracking
+    public class EntityPermission : EntityTracking
     {
         public Guid EntityId { get; set; }
         public PermissionType PermissionType { get; set; }

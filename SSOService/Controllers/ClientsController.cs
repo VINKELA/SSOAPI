@@ -17,9 +17,7 @@ namespace SSOService.Controllers
         private readonly IClientRepository _client;
 
         public ClientsController(IClientRepository client)
-        {
-            _client = client;
-        }
+            => _client = client;
 
 
         // POST: api/Clients

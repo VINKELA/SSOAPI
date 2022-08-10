@@ -18,7 +18,7 @@ namespace SSOService.Models.DbContexts
         public virtual DbSet<Client> Clients { get; set; }
         public virtual DbSet<User> Users { get; set; }
         public virtual DbSet<Application> Applications { get; set; }
-        public virtual DbSet<Permission> Permissions { get; set; }
+        public virtual DbSet<EntityPermission> Permissions { get; set; }
         public virtual DbSet<UserPermission> UserPermissions { get; set; }
         public virtual DbSet<ApplicationPermission> ApplicationPermissions { get; set; }
         public virtual DbSet<UserLogin> UserLogins { get; set; }
@@ -37,7 +37,7 @@ namespace SSOService.Models.DbContexts
         public virtual DbSet<UserRole> UserRoles { get; set; }
         public virtual DbSet<Entity> Entities { get; set; }
 
-        public virtual async Task<int> SaveAndAuditChangesAsync(Guid userId)
+        public virtual async Task<int> SaveAndAuditChangesAsync(Guid? userId = null)
         {
             int result = 0;
             try
