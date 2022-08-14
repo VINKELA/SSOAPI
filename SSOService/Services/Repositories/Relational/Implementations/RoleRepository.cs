@@ -1,10 +1,12 @@
-﻿using Microsoft.EntityFrameworkCore;
-using SSOService.Models.Domains;
+﻿using Microsoft.AspNetCore.Http;
+using Microsoft.EntityFrameworkCore;
 using SSOService.Models;
 using SSOService.Models.Constants;
 using SSOService.Models.DbContexts;
+using SSOService.Models.Domains;
 using SSOService.Models.DTOs.Application;
 using SSOService.Models.DTOs.Role;
+using SSOService.Models.DTOs.User;
 using SSOService.Services.General.Interfaces;
 using SSOService.Services.Repositories.Relational.Interfaces;
 using System;
@@ -16,20 +18,22 @@ namespace SSOService.Services.Repositories.Relational.Implementations
 {
     public class RoleRepository : IRoleRepository
     {
-        private readonly IUserRepository _userRepository;
         private readonly SSODbContext _db;
         private readonly IServiceResponse _response;
+        private readonly IPermissionRepository _permissionRepository;
+        private readonly IHttpContextAccessor _httpContext;
         private readonly GetRoleDTO ReturnType = new();
-        public RoleRepository(IUserRepository userRepository, SSODbContext db,
-            IServiceResponse serviceResponse)
+        public RoleRepository(SSODbContext db,
+            IServiceResponse serviceResponse, IPermissionRepository permissionRepository, IHttpContextAccessor httpContext)
         {
-            _userRepository = userRepository;
             _db = db;
             _response = serviceResponse;
+            _permissionRepository = permissionRepository;
+            _httpContext = httpContext;
         }
         public async Task<Response<GetRoleDTO>> Create(CreateRoleDTO roleDTO)
         {
-            var currentUser = _userRepository.GetLoggedInUser();
+            var currentUser = (GetUserDTO)_httpContext.HttpContext.Items[HttpConstants.CurrentUser];
             var application = new Role
             {
                 Name = roleDTO.Name,
@@ -43,7 +47,7 @@ namespace SSOService.Services.Repositories.Relational.Implementations
         }
         public async Task<Response<GetRoleDTO>> Update(Guid id, UpdateRoleDTO roleDTO)
         {
-            var currentUser = _userRepository.GetLoggedInUser();
+            var currentUser = (GetUserDTO)_httpContext.HttpContext.Items[HttpConstants.CurrentUser];
             var currentRole = _db.Roles.FirstOrDefault(x => x.Id == id);
             var application = new Role
             {
@@ -59,7 +63,7 @@ namespace SSOService.Services.Repositories.Relational.Implementations
         public async Task<Response<GetRoleDTO>> ChangeState(Guid id, bool deactivate = false, bool delete = false)
         {
             var current = await Exists(id);
-            var currentUser = _userRepository.GetLoggedInUser();
+            var currentUser = (GetUserDTO)_httpContext.HttpContext.Items[HttpConstants.CurrentUser];
             if (current == null)
                 return _response.FailedResponse(ReturnType, string.Format(ValidationConstants.FieldNotFound, ClassNames.Role));
             if (deactivate) current.IsActive = !deactivate;
@@ -87,7 +91,7 @@ namespace SSOService.Services.Repositories.Relational.Implementations
         }
         public async Task<Response<IEnumerable<GetRoleDTO>>> Get(string name)
         {
-            var user = _userRepository.GetLoggedInUser();
+            var user = (GetUserDTO)_httpContext.HttpContext.Items[HttpConstants.CurrentUser];
             var list = await _db.Roles.Where(x => !x.IsDeleted).ToListAsync();
             if (!string.IsNullOrEmpty(name))
             {
@@ -95,6 +99,70 @@ namespace SSOService.Services.Repositories.Relational.Implementations
                 list = list.Where(x => x.Name.ToUpper().Contains(name)).ToList();
             }
             return _response.SuccessResponse(list.Select(x => ToDto(x)));
+        }
+        public async Task<Response<GetRoleDTO>> AddClaim(CreateRoleClaim roleClaim)
+        {
+            var user = (GetUserDTO)_httpContext.HttpContext.Items[HttpConstants.CurrentUser];
+
+            var role = await Exists(roleClaim.RoleId);
+
+            if (role == null)
+                return _response.FailedResponse(ReturnType, string.Format(ValidationConstants.FieldNotFound, ClassNames.RoleClaim));
+            var newclaim = new RoleClaim
+            {
+                ClaimType = roleClaim.ClaimType,
+                RoleId = roleClaim.RoleId,
+                ClaimValue = roleClaim.ClaimValue
+            };
+            await _db.AddAsync(newclaim);
+            var status = await _db.SaveAndAuditChangesAsync(user.Id) > 0;
+            if (status) return _response.SuccessResponse(ToDto(role));
+            return _response.FailedResponse(ReturnType);
+        }
+        public async Task<Response<GetRoleDTO>> UpdateClaim(Guid claimId, Guid roleId, bool update)
+        {
+            var user = (GetUserDTO)_httpContext.HttpContext.Items[HttpConstants.CurrentUser];
+            var current = await _db.RoleClaims.FirstOrDefaultAsync(x => x.Id == claimId && x.RoleId == roleId);
+            if (current == null)
+                return _response.FailedResponse(ReturnType, string.Format(ValidationConstants.FieldNotFound, ClassNames.Role));
+            current.IsActive = update ? !current.IsActive : current.IsActive;
+            _db.Update(current);
+            var status = await _db.SaveAndAuditChangesAsync(user.Id) > 0;
+            if (status) return _response.SuccessResponse(ToDto(await Exists(roleId)));
+            return _response.FailedResponse(ReturnType);
+        }
+        public async Task<Response<GetRoleDTO>> AddPermission(Guid permissionId, Guid roleId)
+        {
+            var user = (GetUserDTO)_httpContext.HttpContext.Items[HttpConstants.CurrentUser];
+
+            var permission = await _permissionRepository.Get(permissionId);
+            var role = await Exists(roleId);
+
+            if (!permission.Status)
+                return _response.FailedResponse(ReturnType, string.Format(ValidationConstants.FieldNotFound, ClassNames.Permission));
+            if (role == null)
+                return _response.FailedResponse(ReturnType, string.Format(ValidationConstants.FieldNotFound, ClassNames.Role));
+            var newAuth = new RolePermission
+            {
+                PermissionId = permissionId,
+                RoleId = roleId
+            };
+            await _db.AddAsync(newAuth);
+            var status = await _db.SaveAndAuditChangesAsync(user.Id) > 0;
+            if (status) return _response.SuccessResponse(ToDto(role));
+            return _response.FailedResponse(ReturnType);
+        }
+        public async Task<Response<GetRoleDTO>> UpdateRolePermission(Guid permissionId, Guid roleId, bool update)
+        {
+            var user = (GetUserDTO)_httpContext.HttpContext.Items[HttpConstants.CurrentUser];
+            var current = await _db.RolePermissions.FirstOrDefaultAsync(x => x.PermissionId == permissionId && x.RoleId == roleId);
+            if (current == null)
+                return _response.FailedResponse(ReturnType, string.Format(ValidationConstants.FieldNotFound, ClassNames.Role));
+            current.IsActive = update ? !current.IsActive : current.IsActive;
+            _db.Update(current);
+            var status = await _db.SaveAndAuditChangesAsync(user.Id) > 0;
+            if (status) return _response.SuccessResponse(ToDto(await Exists(roleId)));
+            return _response.FailedResponse(ReturnType);
         }
 
         private static GetRoleDTO ToDto(Role role)

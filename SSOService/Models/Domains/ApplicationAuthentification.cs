@@ -1,5 +1,4 @@
-﻿using SSOService.Models.Domains;
-using System;
+﻿using System;
 
 namespace SSOService.Models.Domains
 {
@@ -13,5 +12,7 @@ namespace SSOService.Models.Domains
         public string ClientSecret { get; set; }
         public Guid ClientApplicationId { get; set; }
         public Guid ServerApplicationId { get; set; }
+
+
     }
 }

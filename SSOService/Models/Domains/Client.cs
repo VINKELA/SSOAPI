@@ -17,7 +17,7 @@ namespace SSOService.Models.Domains
         public string ContactPersonPhoneNumber { get; set; }
         public string LogoUrl { get; set; }
         public string Motto { get; set; }
-        public Guid? ParentClient { get; set; }
+        public Guid? ParentClientId { get; set; }
 
 
     }

@@ -9,7 +9,6 @@ namespace SSOService.Models.Domains
         public string Name { get; set; }
         public ApplicationType ApplicationType { get; set; }
         public string URL { get; set; }
-        public Guid ServiceTypeId { get; set; }
-        public Guid? ClientId { get; set; }
+        public Guid ClientId { get; set; }
     }
 }

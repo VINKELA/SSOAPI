@@ -1,10 +1,12 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.AspNetCore.Http;
+using Microsoft.EntityFrameworkCore;
 using SSOService.Extensions;
 using SSOService.Models;
 using SSOService.Models.Constants;
 using SSOService.Models.DbContexts;
 using SSOService.Models.Domains;
 using SSOService.Models.DTOs.Permission;
+using SSOService.Models.DTOs.User;
 using SSOService.Services.General.Interfaces;
 using SSOService.Services.Repositories.Relational.Interfaces;
 using System;
@@ -16,20 +18,21 @@ namespace SSOService.Services.Repositories.Relational.Implementations
 {
     public class PermissionRepository : IPermissionRepository
     {
-        private readonly IUserRepository _userRepository;
         private readonly SSODbContext _db;
         private readonly IServiceResponse _response;
         private readonly GetPermissionDTO ReturnType = new();
-        public PermissionRepository(IUserRepository userRepository, SSODbContext db,
-            IServiceResponse serviceResponse)
+        private readonly IHttpContextAccessor _httpContext;
+        public PermissionRepository(SSODbContext db, IHttpContextAccessor httpContext,
+
+        IServiceResponse serviceResponse)
         {
-            _userRepository = userRepository;
             _db = db;
             _response = serviceResponse;
+            _httpContext = httpContext;
         }
         public async Task<Response<GetPermissionDTO>> Create(CreatePermissionDTO permissionDTO)
         {
-            var currentUser = _userRepository.GetLoggedInUser();
+            var currentUser = (GetUserDTO)_httpContext.HttpContext.Items[HttpConstants.CurrentUser];
             var application = new Permission
             {
                 Name = permissionDTO.Name,
@@ -42,7 +45,7 @@ namespace SSOService.Services.Repositories.Relational.Implementations
         }
         public async Task<Response<GetPermissionDTO>> Update(Guid id, UpdatePermissionDTO permissionDTO)
         {
-            var currentUser = _userRepository.GetLoggedInUser();
+            var currentUser = (GetUserDTO)_httpContext.HttpContext.Items[HttpConstants.CurrentUser];
             var currentPermission = _db.Permissions.FirstOrDefault(x => x.Id == id);
             var application = new Permission
             {
@@ -58,7 +61,7 @@ namespace SSOService.Services.Repositories.Relational.Implementations
         public async Task<Response<GetPermissionDTO>> ChangeState(Guid id, bool deactivate = false, bool delete = false)
         {
             var current = await Exists(id);
-            var currentUser = _userRepository.GetLoggedInUser();
+            var currentUser = (GetUserDTO)_httpContext.HttpContext.Items[HttpConstants.CurrentUser];
             if (current == null)
                 return _response.FailedResponse(ReturnType, string.Format(ValidationConstants.FieldNotFound, ClassNames.Permission));
             if (deactivate) current.IsActive = !deactivate;
@@ -86,7 +89,7 @@ namespace SSOService.Services.Repositories.Relational.Implementations
         }
         public async Task<Response<IEnumerable<GetPermissionDTO>>> Get(string name)
         {
-            var user = _userRepository.GetLoggedInUser();
+            var user = (GetUserDTO)_httpContext.HttpContext.Items[HttpConstants.CurrentUser];
             var list = await _db.Permissions.Where(x => !x.IsDeleted).ToListAsync();
             if (!string.IsNullOrEmpty(name))
             {

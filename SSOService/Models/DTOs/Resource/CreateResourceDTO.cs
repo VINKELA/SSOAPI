@@ -3,7 +3,7 @@ using System;
 
 namespace SSOService.Models.DTOs.Service
 {
-    public class CreateServiceDTO
+    public class CreateResourceDTO
     {
         public string Name { get; set; }
         public Entity ServiceType { get; set; }

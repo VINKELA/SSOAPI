@@ -14,43 +14,43 @@ namespace SSOService.Controllers
     [AuthorizedRequest]
     public class ServicesController : ControllerBase
     {
-        private readonly IServiceRepository _serviceRepository;
+        private readonly IResourceRepository _serviceRepository;
 
-        public ServicesController(IServiceRepository serviceRepository)
+        public ServicesController(IResourceRepository serviceRepository)
             => _serviceRepository = serviceRepository;
 
         // GET: api/Services
         [HttpGet]
-        public async Task<ActionResult<Response<IEnumerable<GetServiceDTO>>>> GetServices(string name = null)
+        public async Task<ActionResult<Response<IEnumerable<GetResourceDTO>>>> GetServices(string name = null)
             => Ok(await _serviceRepository.Get(name));
 
         // GET: api/Services/5
         [HttpGet("{id}")]
-        public async Task<ActionResult<Response<GetServiceDTO>>> GetService(Guid id)
+        public async Task<ActionResult<Response<GetResourceDTO>>> GetService(Guid id)
             => Ok(await _serviceRepository.Get(id));
 
         // PUT: api/Services/5
         // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
         [HttpPut("{id}")]
-        public async Task<ActionResult<Response<GetServiceDTO>>> PutService(Guid id, UpdateServiceDTO service)
+        public async Task<ActionResult<Response<GetResourceDTO>>> PutService(Guid id, UpdateResourceDTO service)
             => Ok(await _serviceRepository.Update(id, service));
 
         // POST: api/Services
         // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
         [HttpPost]
-        public async Task<ActionResult<Response<GetServiceDTO>>> PostService(CreateServiceDTO service)
+        public async Task<ActionResult<Response<GetResourceDTO>>> PostService(CreateResourceDTO service)
             => Ok(await _serviceRepository.Create(service));
 
         // DELETE: api/Services/5
         [HttpDelete("{id}")]
-        public async Task<ActionResult<Response<GetServiceDTO>>> DeleteService(Guid id)
+        public async Task<ActionResult<Response<GetResourceDTO>>> DeleteService(Guid id)
             => Ok(await _serviceRepository.ChangeState(id, false, true));
         [HttpPatch("activate/{id}")]
-        public async Task<ActionResult<Response<GetServiceDTO>>> Activate(Guid id)
+        public async Task<ActionResult<Response<GetResourceDTO>>> Activate(Guid id)
             => Ok(await _serviceRepository.ChangeState(id));
 
         [HttpPatch("deactivate/{id}")]
-        public async Task<ActionResult<Response<GetServiceDTO>>> Deactivate(Guid id)
+        public async Task<ActionResult<Response<GetResourceDTO>>> Deactivate(Guid id)
             => Ok(await _serviceRepository.ChangeState(id, true));
 
 

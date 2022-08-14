@@ -1,11 +1,8 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using SSOService.Extensions;
 using SSOService.Models;
-using SSOService.Models.DTOs.Application;
 using SSOService.Models.DTOs.ServiceType;
 using SSOService.Services.Interfaces;
-using SSOService.Services.Repositories.Relational.Implementations;
-using SSOService.Services.Repositories.Relational.Interfaces;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
@@ -17,9 +14,9 @@ namespace SSOService.Controllers
     [AuthorizedRequest]
     public class ServiceTypesController : ControllerBase
     {
-        private readonly IServiceTypeRepository _serviceTypeRepository;
+        private readonly IResourceType _serviceTypeRepository;
 
-        public ServiceTypesController(IServiceTypeRepository serviceTypeRepository)
+        public ServiceTypesController(IResourceType serviceTypeRepository)
             => _serviceTypeRepository = serviceTypeRepository;
 
         // GET: api/ServiceTypes

@@ -11,9 +11,9 @@ using System.Threading.Tasks;
 
 namespace SSOService.Controllers
 {
+    [AuthorizedRequest]
     [Route("api/[controller]")]
     [ApiController]
-    [AuthorizedRequest]
 
     public class UsersController : ControllerBase
     {
@@ -29,7 +29,7 @@ namespace SSOService.Controllers
 
         public async Task<ActionResult<IEnumerable<GetUserDTO>>> Get(string name = null, string email = null,
    string phoneNumber = null, string client = null) => Ok(await _user.Get(name, email, phoneNumber, client));
-        [HttpPut("{id}")]
+        [HttpPatch("{id}")]
         public async Task<ActionResult<GetUserDTO>> Post(Guid id, [FromForm] UpdateUserDTO user)
             => Ok(await _user.Update(id, user));
 

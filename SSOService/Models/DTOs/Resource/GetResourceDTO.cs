@@ -2,7 +2,7 @@
 
 namespace SSOService.Models.DTOs.Service
 {
-    public class GetServiceDTO
+    public class GetResourceDTO
     {
         public string Name { get; set; }
         public string ServiceType { get; set; }

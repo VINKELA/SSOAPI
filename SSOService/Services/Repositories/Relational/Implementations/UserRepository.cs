@@ -37,13 +37,19 @@ namespace SSOService.Services.Repositories.Relational.Implementations
         private readonly IFileRepository _fileRepository;
         private readonly IHttpContextAccessor _httpContext;
         private readonly GetUserDTO ReturnType = new();
-        public UserRepository(IServiceResponse response, SSODbContext db, IFileRepository fileRepository, IHttpContextAccessor httpContext)
+        private readonly IPermissionRepository _permissionRepository;
+        private readonly ISubscriptionRepository _subscriptionRepository;
+        private readonly IRoleRepository _roleRepository;
+        public UserRepository(IServiceResponse response, SSODbContext db, IFileRepository fileRepository,
+            IHttpContextAccessor httpContext, IPermissionRepository permissionRepository, ISubscriptionRepository subscriptionRepository, IRoleRepository roleRepository)
         {
             _response = response;
             _db = db;
             _fileRepository = fileRepository;
             _httpContext = httpContext;
-
+            _permissionRepository = permissionRepository;
+            _subscriptionRepository = subscriptionRepository;
+            _roleRepository = roleRepository;
         }
         public async Task<Response<GetUserDTO>> Save(CreateUserDTO user)
         {
@@ -124,7 +130,7 @@ namespace SSOService.Services.Repositories.Relational.Implementations
             {
                 if (clients.Count > 0)
                     await RegisterUserWithClient(createdUser.Id, clients);
-                return _response.SuccessResponse(Todto(createdUser));
+                return _response.SuccessResponse(ToDto(createdUser));
             }
             return _response.FailedResponse(ReturnType);
         }
@@ -174,7 +180,7 @@ namespace SSOService.Services.Repositories.Relational.Implementations
             {
                 if (clients.Count > 0)
                     await RegisterUserWithClient(current.Id, clients);
-                _response.SuccessResponse(Todto(current));
+                _response.SuccessResponse(ToDto(current));
             }
 
             return _response.FailedResponse(ReturnType);
@@ -197,7 +203,7 @@ namespace SSOService.Services.Repositories.Relational.Implementations
             current.ConcurrencyStamp = Guid.NewGuid();
             _db.Users.Update(current);
             var result = await _db.SaveAndAuditChangesAsync(GetLoggedInUser().Id);
-            return result > 0 ? _response.SuccessResponse(Todto(current)) :
+            return result > 0 ? _response.SuccessResponse(ToDto(current)) :
             _response.FailedResponse(ReturnType);
         }
         public async Task<Response<GetUserDTO>> Get(Guid id)
@@ -205,7 +211,7 @@ namespace SSOService.Services.Repositories.Relational.Implementations
             var current = await Exists(id);
             if (current == null)
                 return _response.FailedResponse(ReturnType, string.Format(ValidationConstants.FieldNotFound, ClassNames.User));
-            return _response.SuccessResponse(Todto(current));
+            return _response.SuccessResponse(ToDto(current));
         }
         public async Task<Response<GetUserDTO>> Get(string emailOrUsername)
         {
@@ -217,14 +223,14 @@ namespace SSOService.Services.Repositories.Relational.Implementations
         public async Task<GetUserDTO> GetUserByEmailOrUsername(string emailOrUsername)
         {
             var current = await _db.Users.FirstOrDefaultAsync(x => x.Email == emailOrUsername || x.UserName == emailOrUsername);
-            return Todto(current);
+            return ToDto(current);
         }
         public async Task<Response<IEnumerable<GetUserDTO>>> Get(string name, string email,
             string phoneNumber, string client)
         {
             var user = GetLoggedInUser();
             var list = await _db.Users.Where(x => !x.IsDeleted).ToListAsync();
-            var users = list.Select(x => Todto(x));
+            var users = list.Select(x => ToDto(x));
             if (!string.IsNullOrEmpty(name))
             {
                 name = name.Trim().ToUpper();
@@ -238,8 +244,151 @@ namespace SSOService.Services.Repositories.Relational.Implementations
                 users = users.Where(x => x.Clients.Select(x => x.ClientName).Contains(client.Trim().ToUpper()));
             return _response.SuccessResponse(users);
         }
-        public GetUserDTO GetLoggedInUser() => (GetUserDTO)_httpContext.HttpContext.Items[HttpConstants.CurrentUser];
-        private GetUserDTO Todto(User user)
+        public GetUserDTO GetLoggedInUser()
+            => (GetUserDTO)_httpContext.HttpContext.Items[HttpConstants.CurrentUser];
+
+
+        public async Task<Response<GetUserDTO>> AddPermission(Guid permissionId, Guid userId)
+        {
+            var loggedInUser = GetLoggedInUser();
+
+            var permission = await _permissionRepository.Get(permissionId);
+            var user = await Exists(userId);
+
+            if (permission == null)
+                return _response.FailedResponse(ReturnType, string.Format(ValidationConstants.FieldNotFound, ClassNames.Permission));
+            if (user == null)
+                return _response.FailedResponse(ReturnType, string.Format(ValidationConstants.FieldNotFound, ClassNames.User));
+            var newPermission = new UserPermission
+            {
+                PermissionId = permissionId,
+                UserId = userId
+            };
+            await _db.AddAsync(newPermission);
+            var status = await _db.SaveAndAuditChangesAsync(loggedInUser.Id) > 0;
+            if (status) return _response.SuccessResponse(ToDto(user));
+            return _response.FailedResponse(ReturnType);
+        }
+        public async Task<Response<GetUserDTO>> UpdatePermission(Guid permissionId, Guid userId, bool update)
+        {
+            var user = GetLoggedInUser();
+            var current = await _db.UserPermissions.FirstOrDefaultAsync(x => x.PermissionId == permissionId && x.UserId == userId);
+            if (current == null)
+                return _response.FailedResponse(ReturnType, string.Format(ValidationConstants.FieldNotFound, ClassNames.User));
+            current.IsActive = update ? !current.IsActive : current.IsActive;
+            _db.Update(current);
+            var status = await _db.SaveAndAuditChangesAsync(user.Id) > 0;
+            if (status) return _response.SuccessResponse(ToDto(await Exists(current.UserId)));
+            return _response.FailedResponse(ReturnType);
+        }
+        public async Task<Response<GetUserDTO>> AddSubscription(Guid subscriptionId, Guid userId)
+        {
+            var loggedInuser = GetLoggedInUser();
+
+            var subscription = await _subscriptionRepository.Get(subscriptionId);
+            var user = await Exists(userId);
+
+            if (subscription == null)
+                return _response.FailedResponse(ReturnType, string.Format(ValidationConstants.FieldNotFound, ClassNames.Subscription));
+            if (user == null)
+                return _response.FailedResponse(ReturnType, string.Format(ValidationConstants.FieldNotFound, ClassNames.User));
+            var newAuth = new UserSubscription
+            {
+                SubscriptionId = subscriptionId,
+                UserId = userId
+            };
+            await _db.AddAsync(newAuth);
+            var status = await _db.SaveAndAuditChangesAsync(loggedInuser.Id) > 0;
+            if (status) return _response.SuccessResponse(ToDto(user));
+            return _response.FailedResponse(ReturnType);
+        }
+        public async Task<Response<GetUserDTO>> UpdateSubscription(Guid subscriptionId, Guid userId, bool update)
+        {
+            var loggedInUser = GetLoggedInUser();
+            var current = await _db.UserSubscriptions.FirstOrDefaultAsync(x => x.SubscriptionId == subscriptionId && x.UserId == userId);
+            if (current == null)
+                return _response.FailedResponse(ReturnType, string.Format(ValidationConstants.FieldNotFound, ClassNames.User));
+            current.IsActive = update ? !current.IsActive : current.IsActive;
+            _db.Update(current);
+            var status = await _db.SaveAndAuditChangesAsync(loggedInUser.Id) > 0;
+            if (status) return _response.SuccessResponse(ToDto(await Exists(current.UserId)));
+            return _response.FailedResponse(ReturnType);
+        }
+        public async Task<Response<GetUserDTO>> AddRole(Guid roleId, Guid userId)
+        {
+            var loggedInuser = GetLoggedInUser();
+
+            var role = await _roleRepository.Get(roleId);
+            var user = await Exists(userId);
+
+            if (role == null)
+                return _response.FailedResponse(ReturnType, string.Format(ValidationConstants.FieldNotFound, ClassNames.Role));
+            if (user == null)
+                return _response.FailedResponse(ReturnType, string.Format(ValidationConstants.FieldNotFound, ClassNames.User));
+            var newAuth = new UserRole
+            {
+                RoleId = roleId,
+                UserId = userId
+            };
+            await _db.AddAsync(newAuth);
+            var status = await _db.SaveAndAuditChangesAsync(loggedInuser.Id) > 0;
+            if (status) return _response.SuccessResponse(ToDto(user));
+            return _response.FailedResponse(ReturnType);
+        }
+        public async Task<Response<GetUserDTO>> UpdateRole(Guid roleId, Guid userId, bool update)
+        {
+            var loggedInUser = GetLoggedInUser();
+            var current = await _db.UserRoles.FirstOrDefaultAsync(x => x.RoleId == roleId && x.UserId == userId);
+            if (current == null)
+                return _response.FailedResponse(ReturnType, string.Format(ValidationConstants.FieldNotFound, ClassNames.User));
+            current.IsActive = update ? !current.IsActive : current.IsActive;
+            _db.Update(current);
+            var status = await _db.SaveAndAuditChangesAsync(loggedInUser.Id) > 0;
+            if (status) return _response.SuccessResponse(ToDto(await Exists(current.UserId)));
+            return _response.FailedResponse(ReturnType);
+        }
+        public async Task<Response<GetUserDTO>> AddDevice(CreateUserDevice device)
+        {
+            var loggedInuser = GetLoggedInUser();
+
+            var user = await Exists(device.UserId);
+
+            if (user == null)
+                return _response.FailedResponse(ReturnType, string.Format(ValidationConstants.FieldNotFound, ClassNames.User));
+            var newDevice = new UserDevice
+            {
+                DeviceName = device.DeviceName,
+                DeviceType = device.DeviceType,
+                UserId = device.UserId
+
+            };
+            await _db.AddAsync(newDevice);
+            var status = await _db.SaveAndAuditChangesAsync(loggedInuser.Id) > 0;
+            if (status) return _response.SuccessResponse(ToDto(user));
+            return _response.FailedResponse(ReturnType);
+        }
+        public async Task<Response<GetUserDTO>> AddLogin(CreateUserLogin login)
+        {
+            var loggedInuser = GetLoggedInUser();
+
+            var user = await Exists(login.UserId);
+
+            if (user == null)
+                return _response.FailedResponse(ReturnType, string.Format(ValidationConstants.FieldNotFound, ClassNames.User));
+            var newDevice = new UserLogin
+            {
+                LoginProvider = login.LoginProvider,
+                ProdviderDisplayName = login.ProdviderDisplayName,
+                ProviderKey = login.ProviderKey,
+                UserId = login.UserId
+            };
+            await _db.AddAsync(newDevice);
+            var status = await _db.SaveAndAuditChangesAsync(loggedInuser.Id) > 0;
+            if (status) return _response.SuccessResponse(ToDto(user));
+            return _response.FailedResponse(ReturnType);
+        }
+
+        private GetUserDTO ToDto(User user)
         {
             if (user == null) return null;
             var data = new List<UserClientDTO>();

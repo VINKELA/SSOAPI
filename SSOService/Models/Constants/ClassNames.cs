@@ -7,10 +7,16 @@
         public const string Application = "Application";
         public const string Entity = "Entity";
         public const string Role = "Role";
-        public const string Service = "Service";
+        public const string Resource = "Resource";
         public const string Subscription = "Subscription";
         public const string Permission = "Permission";
-        public const string ServiceType = "ServiceType";
+        public const string ResourceType = "ResourceType";
+        public const string ApplicationPermission = "Application Permission";
+        public const string ApplicationResource = "Application Source";
+        public const string RoleClaim = "Role Claim";
+
+
+
 
 
     }

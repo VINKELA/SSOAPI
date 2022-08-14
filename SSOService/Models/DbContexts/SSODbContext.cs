@@ -24,8 +24,8 @@ namespace SSOService.Models.DbContexts
         public virtual DbSet<UserDevice> UserDevices { get; set; }
         public virtual DbSet<Subscription> Subscriptions { get; set; }
         public virtual DbSet<ClientSubscription> ClientSubscriptions { get; set; }
-        public virtual DbSet<Service> Services { get; set; }
-        public virtual DbSet<SubscriptionServices> SubscriptionServices { get; set; }
+        public virtual DbSet<Resource> Resources { get; set; }
+        public virtual DbSet<SubscriptionResource> SubscriptionServices { get; set; }
         public virtual DbSet<ApplicationAuthentification> ApplicationAuthentifications { get; set; }
         public virtual DbSet<Audit> AuditLogs { get; set; }
         public virtual DbSet<Role> Roles { get; set; }
@@ -34,7 +34,13 @@ namespace SSOService.Models.DbContexts
         public virtual DbSet<UserClient> UserClients { get; set; }
         public virtual DbSet<RefreshToken> RefreshTokens { get; set; }
         public virtual DbSet<UserRole> UserRoles { get; set; }
-        public virtual DbSet<ServiceType> ServiceTypes { get; set; }
+        public virtual DbSet<ResourceType> ResourceTypes { get; set; }
+        public virtual DbSet<CustomParameter> CustomParameters { get; set; }
+        public virtual DbSet<ApplicationResource> ApplicationResources { get; set; }
+        public virtual DbSet<UserSubscription> UserSubscriptions { get; set; }
+
+
+
 
 
         public virtual async Task<int> SaveAndAuditChangesAsync(Guid? userId = null)

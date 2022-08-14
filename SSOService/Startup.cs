@@ -13,10 +13,12 @@ using SSOService.Models.Constants;
 using SSOService.Models.DbContexts;
 using SSOService.Services.General.Implementation;
 using SSOService.Services.General.Interfaces;
+using SSOService.Services.Interfaces;
 using SSOService.Services.Repositories.NonRelational.Implementations;
 using SSOService.Services.Repositories.NonRelational.Interfaces;
 using SSOService.Services.Repositories.Relational.Implementations;
 using SSOService.Services.Repositories.Relational.Interfaces;
+using SSOService.Subscriptions.Repositories.Relational.Implementations;
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -56,6 +58,16 @@ namespace SSOService
             services.AddScoped<IAuth, AuthService>();
             services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
             services.AddScoped<IApplicationRepository, ApplicationRepository>();
+            services.AddScoped<IPermissionRepository, PermissionRepository>();
+            services.AddScoped<IResourceRepository, ResourceRepository>();
+            services.AddScoped<IResourceType, ResourceTypeRepository>();
+            services.AddScoped<ISubscriptionRepository, SubscriptionRepository>();
+            services.AddScoped<IRoleRepository, RoleRepository>();
+
+
+
+
+
 
             services.AddAuthentication(options =>
             {
@@ -78,7 +90,7 @@ namespace SSOService
             {
                 c.SwaggerDoc("DOC v1", new OpenApiInfo
                 {
-                    Version = "v1",
+                    Version = Version,
                     Title = "SSO API Documentation",
                     Description = "SSO api documentation",
                     TermsOfService = new Uri("https://robotnigeria.com"),

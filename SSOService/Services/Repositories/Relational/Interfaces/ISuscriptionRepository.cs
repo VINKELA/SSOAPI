@@ -13,5 +13,7 @@ namespace SSOService.Services.Repositories.Relational.Interfaces
         Task<Response<GetSubscriptionDTO>> ChangeState(Guid id, bool deactivate = false, bool delete = false);
         Task<Response<GetSubscriptionDTO>> Update(Guid id, UpdateSubscriptionDTO subscriptionDTO);
         Task<Response<GetSubscriptionDTO>> Create(CreateSubscriptionDTO subscriptionDTO);
+        Task<GetSubscriptionDTO> GetSubscriptionById(Guid id);
+
     }
 }

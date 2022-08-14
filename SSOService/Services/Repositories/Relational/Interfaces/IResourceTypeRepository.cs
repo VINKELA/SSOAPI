@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace SSOService.Services.Interfaces
 {
-    public interface IServiceTypeRepository
+    public interface IResourceType
     {
         Task<Response<IEnumerable<GetServiceTypeDTO>>> Get(string name);
         Task<Response<GetServiceTypeDTO>> Get(Guid id);
