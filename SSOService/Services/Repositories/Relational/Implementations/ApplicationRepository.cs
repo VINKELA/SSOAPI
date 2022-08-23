@@ -1,6 +1,6 @@
-﻿using Microsoft.AspNetCore.Http;
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using SSOService.Extensions;
+using SSOService.Helpers;
 using SSOService.Models;
 using SSOService.Models.Constants;
 using SSOService.Models.DbContexts;
@@ -23,56 +23,55 @@ namespace SSOService.Services.Repositories.Relational.Implementations
         private readonly IServiceResponse _response;
         private readonly IResourceRepository _resourceRepository;
         private readonly IPermissionRepository _permissionRepository;
-        private readonly IHttpContextAccessor _httpContext;
         private readonly GetApplicationDTO ReturnType = new();
         private readonly GetApplicationAuthentificationDTO ApplicationAuthorizationReturnType = new();
+        private readonly GetUserDTO _currentUser = RequestContext.GetCurrentUser;
 
-        public ApplicationRepository(SSODbContext db, IHttpContextAccessor httpContext,
+        public ApplicationRepository(SSODbContext db,
             IServiceResponse serviceResponse, IResourceRepository resourceRepository, IPermissionRepository permissionRepository)
         {
             _db = db;
             _response = serviceResponse;
             _resourceRepository = resourceRepository;
             _permissionRepository = permissionRepository;
-            _httpContext = httpContext;
         }
         public async Task<Response<GetApplicationDTO>> Create(CreateApplicationDTO applicationDTO)
         {
-            var currentUser = (GetUserDTO)_httpContext.HttpContext.Items[HttpConstants.CurrentUser];
+
             var application = new Application
             {
                 Name = applicationDTO.Name,
                 ApplicationType = applicationDTO.ApplicationType,
                 URL = applicationDTO.URL,
                 ClientId = applicationDTO.ClientId,
-                CreatedBy = currentUser.Email
+                CreatedBy = _currentUser.Email
             };
             await _db.AddAsync(application);
-            var status = await _db.SaveAndAuditChangesAsync(currentUser.Id) > 0;
+            var status = await _db.SaveAndAuditChangesAsync(_currentUser.Id) > 0;
             return status ? _response.SuccessResponse(ToDto(application))
                 : _response.FailedResponse(ReturnType);
         }
         public async Task<Response<GetApplicationDTO>> Update(Guid id, UpdateApplicationDTO applicationDTO)
         {
-            var currentUser = (GetUserDTO)_httpContext.HttpContext.Items[HttpConstants.CurrentUser];
+
             var currentApplication = await _db.Applications.FirstOrDefaultAsync(x => x.Id == id);
             var application = new Application
             {
                 Name = applicationDTO.Name?.ToLower() ?? currentApplication.Name,
                 ApplicationType = applicationDTO.ApplicationType ?? currentApplication.ApplicationType,
                 URL = applicationDTO.URL?.ToLower() ?? currentApplication.URL,
-                LastModifiedBy = currentUser.Email,
+                LastModifiedBy = _currentUser.Email,
                 Modified = DateTime.Now
             };
             await _db.AddAsync(currentApplication);
-            var status = await _db.SaveAndAuditChangesAsync(currentUser.Id) > 0;
+            var status = await _db.SaveAndAuditChangesAsync(_currentUser.Id) > 0;
             return status ? _response.SuccessResponse(ToDto(currentApplication))
                 : _response.FailedResponse(ReturnType);
         }
         public async Task<Response<GetApplicationDTO>> ChangeState(Guid id, bool deactivate = false, bool delete = false)
         {
             var current = await Exists(id);
-            var currentUser = (GetUserDTO)_httpContext.HttpContext.Items[HttpConstants.CurrentUser];
+
             if (current == null)
                 return _response.FailedResponse(ReturnType, string.Format(ValidationConstants.FieldNotFound, ClassNames.Application));
             if (deactivate) current.IsActive = !deactivate;
@@ -87,7 +86,7 @@ namespace SSOService.Services.Repositories.Relational.Implementations
                 return _response.FailedResponse(ReturnType, string.Format(ValidationConstants.EntityChangedByAnotherUser, current.Id));
             current.ConcurrencyStamp = Guid.NewGuid();
             _db.Applications.Update(current);
-            var result = await _db.SaveAndAuditChangesAsync(currentUser.Id);
+            var result = await _db.SaveAndAuditChangesAsync(_currentUser.Id);
             return result > 0 ? _response.SuccessResponse(ToDto(current)) :
             _response.FailedResponse(ReturnType);
         }
@@ -98,10 +97,18 @@ namespace SSOService.Services.Repositories.Relational.Implementations
                 return _response.FailedResponse(ReturnType, string.Format(ValidationConstants.FieldNotFound, ClassNames.Application));
             return _response.SuccessResponse(ToDto(current));
         }
+        public async Task<Response<GetApplicationDTO>> Get(AppLoginDTO app)
+        {
+            var current = await _db.ApplicationAuthentifications.FirstOrDefaultAsync(x => x.Code == app.ClientCode && x.ClientSecret == app.ClientSecret);
+            if (current == null)
+                return _response.FailedResponse(ReturnType, string.Format(ValidationConstants.FieldNotFound, ClassNames.Application));
+            return await Get(current.ClientApplicationId);
+        }
+
         public async Task<Response<IEnumerable<GetApplicationDTO>>> Get(string name, ApplicationType? applicationType,
             Entity? serviceType)
         {
-            var user = (GetUserDTO)_httpContext.HttpContext.Items[HttpConstants.CurrentUser];
+
             var list = await _db.Applications.Where(x => !x.IsDeleted).ToListAsync();
             if (!string.IsNullOrEmpty(name))
             {
@@ -114,7 +121,7 @@ namespace SSOService.Services.Repositories.Relational.Implementations
         }
         public async Task<Response<GetApplicationDTO>> UpdatePermission(Guid applicationId, Guid permissionId, bool update)
         {
-            var user = (GetUserDTO)_httpContext.HttpContext.Items[HttpConstants.CurrentUser];
+
             var current = await Exists(applicationId);
             if (current == null)
                 return _response.FailedResponse(ReturnType, string.Format(ValidationConstants.FieldNotFound, ClassNames.Application));
@@ -128,14 +135,14 @@ namespace SSOService.Services.Repositories.Relational.Implementations
             applicationPermission.IsActive = update ? !applicationPermission.IsActive : applicationPermission.IsActive;
             applicationPermission.IsDeleted = !update ? !applicationPermission.IsDeleted : applicationPermission.IsDeleted;
             _db.Update(applicationPermission);
-            var status = await _db.SaveAndAuditChangesAsync(user.Id) > 0;
+            var status = await _db.SaveAndAuditChangesAsync(_currentUser.Id) > 0;
             if (status) return await Get(applicationId);
             return _response.FailedResponse(ReturnType);
         }
 
         public async Task<Response<GetApplicationDTO>> AddPermissionToApplication(Guid applicationId, Guid permissionId)
         {
-            var user = (GetUserDTO)_httpContext.HttpContext.Items[HttpConstants.CurrentUser];
+
 
             var application = await Exists(applicationId);
             if (application == null)
@@ -149,13 +156,13 @@ namespace SSOService.Services.Repositories.Relational.Implementations
                 PermissionId = permissionId
             }
                 );
-            var status = await _db.SaveAndAuditChangesAsync(user.Id) > 0;
+            var status = await _db.SaveAndAuditChangesAsync(_currentUser.Id) > 0;
             if (status) return await Get(applicationId);
             return _response.FailedResponse(ReturnType);
         }
         public async Task<Response<GetApplicationDTO>> RemoveResourceToApplication(Guid applicationId, Guid resourceId)
         {
-            var user = (GetUserDTO)_httpContext.HttpContext.Items[HttpConstants.CurrentUser];
+
 
             var application = await Exists(applicationId);
             if (application == null)
@@ -169,14 +176,14 @@ namespace SSOService.Services.Repositories.Relational.Implementations
                 ResourceId = resourceId
             }
                 );
-            var status = await _db.SaveAndAuditChangesAsync(user.Id) > 0;
+            var status = await _db.SaveAndAuditChangesAsync(_currentUser.Id) > 0;
             if (status) return await Get(applicationId);
             return _response.FailedResponse(ReturnType);
         }
 
         public async Task<Response<GetApplicationDTO>> UpdateResource(Guid applicationId, Guid serverId, bool update)
         {
-            var user = (GetUserDTO)_httpContext.HttpContext.Items[HttpConstants.CurrentUser];
+
             var current = await Exists(applicationId);
             if (current == null)
                 return _response.FailedResponse(ReturnType, string.Format(ValidationConstants.FieldNotFound, ClassNames.Application));
@@ -190,14 +197,14 @@ namespace SSOService.Services.Repositories.Relational.Implementations
             applicationResource.IsActive = update ? !applicationResource.IsActive : applicationResource.IsActive;
             applicationResource.IsDeleted = !update ? !applicationResource.IsDeleted : applicationResource.IsDeleted;
             _db.Update(applicationResource);
-            var status = await _db.SaveAndAuditChangesAsync(user.Id) > 0;
+            var status = await _db.SaveAndAuditChangesAsync(_currentUser.Id) > 0;
             if (status) return await Get(applicationId);
             return _response.FailedResponse(ReturnType);
         }
 
         public async Task<Response<GetApplicationAuthentificationDTO>> AddApplication(Guid applicationId, Guid serverId)
         {
-            var user = (GetUserDTO)_httpContext.HttpContext.Items[HttpConstants.CurrentUser];
+
 
             var application = await Exists(applicationId);
             var server = await Exists(serverId);
@@ -212,19 +219,19 @@ namespace SSOService.Services.Repositories.Relational.Implementations
                 ServerApplicationId = serverId
             };
             await _db.AddAsync(newAuth);
-            var status = await _db.SaveAndAuditChangesAsync(user.Id) > 0;
+            var status = await _db.SaveAndAuditChangesAsync(_currentUser.Id) > 0;
             if (status) return _response.SuccessResponse(await ToDto(newAuth.Code));
             return _response.FailedResponse(ApplicationAuthorizationReturnType);
         }
         public async Task<Response<GetApplicationAuthentificationDTO>> UpdateApplicationAuthentification(Guid applicationId, Guid serverId, bool update)
         {
-            var user = (GetUserDTO)_httpContext.HttpContext.Items[HttpConstants.CurrentUser];
+
             var current = await _db.ApplicationAuthentifications.FirstOrDefaultAsync(x => x.ServerApplicationId == serverId && x.ClientApplicationId == applicationId);
             if (current == null)
                 return _response.FailedResponse(ApplicationAuthorizationReturnType, string.Format(ValidationConstants.FieldNotFound, ClassNames.Application));
             current.IsActive = update ? !current.IsActive : current.IsActive;
             _db.Update(current);
-            var status = await _db.SaveAndAuditChangesAsync(user.Id) > 0;
+            var status = await _db.SaveAndAuditChangesAsync(_currentUser.Id) > 0;
             if (status) return _response.SuccessResponse(await ToDto(current.Code));
             return _response.FailedResponse(ApplicationAuthorizationReturnType);
         }

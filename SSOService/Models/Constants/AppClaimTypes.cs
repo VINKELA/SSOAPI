@@ -9,6 +9,8 @@
         public const string Phone = "Phone";
         public const string Role = "Role";
         public const string UserName = "UserName";
+        public const string AppName = "UserName";
+        public const string ClientName = "UserName";
 
     }
 }

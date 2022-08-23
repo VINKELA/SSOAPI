@@ -3,6 +3,7 @@
     public enum CustomParameterType
     {
         query = 1,
-        body
+        body,
+        form
     }
 }

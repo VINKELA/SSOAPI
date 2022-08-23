@@ -1,6 +1,6 @@
-﻿using Microsoft.AspNetCore.Http;
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using SSOService.Extensions;
+using SSOService.Helpers;
 using SSOService.Models;
 using SSOService.Models.Constants;
 using SSOService.Models.DbContexts;
@@ -32,23 +32,24 @@ namespace SSOService.Services.Repositories.Relational.Implementations
 
         private readonly IFileRepository _fileRepository;
         private readonly ISubscriptionRepository _subscriptionRepository;
-        private readonly IHttpContextAccessor _httpContext;
+        private readonly IUserRepository _userRepository;
+        private readonly GetUserDTO _currentUser = RequestContext.GetCurrentUser;
 
 
         public ClientRepository(SSODbContext db, IServiceResponse response, IFileRepository fileRepository,
-            ISubscriptionRepository subscriptionRepository, IHttpContextAccessor httpContext)
+            ISubscriptionRepository subscriptionRepository, IUserRepository userRepository)
         {
             _db = db;
             _response = response;
             _fileRepository = fileRepository;
             _subscriptionRepository = subscriptionRepository;
-            _httpContext = httpContext;
+            _userRepository = userRepository;
 
         }
 
         public async Task<Response<GetClientDTO>> Save(CreateClientDTO client)
         {
-            var user = (GetUserDTO)_httpContext.HttpContext.Items[HttpConstants.CurrentUser];
+
             if (string.IsNullOrEmpty(client.Name))
                 return _response.FailedResponse(ReturnType,
                 string.Format(ValidationConstants.InvalidFieldFormatResponse, Name));
@@ -75,14 +76,20 @@ namespace SSOService.Services.Repositories.Relational.Implementations
                 LogoUrl = filePath
             };
             _db.Clients.Add(newClient);
-            var result = await _db.SaveAndAuditChangesAsync(user.Id);
-            return result > 0 ? _response.SuccessResponse(Todto(newClient)) :
-                _response.FailedResponse(ReturnType);
+            var status = await _db.SaveAndAuditChangesAsync(_currentUser.Id);
+            if (status > 0)
+            {
+                var createdClient = await Get(newClient.Code);
+                await _userRepository.RegisterUserWithClient(_currentUser.Id, createdClient.Id);
+                return _response.SuccessResponse(Todto(newClient));
+
+            }
+            return _response.FailedResponse(ReturnType);
         }
 
         public async Task<Response<GetClientDTO>> ChangeState(Guid id, bool deactivate = false, bool delete = false)
         {
-            var user = (GetUserDTO)_httpContext.HttpContext.Items[HttpConstants.CurrentUser];
+
             var current = await Exists(id);
             if (current == null)
                 return _response.FailedResponse(ReturnType, string.Format(ValidationConstants.FieldNotFound, EntityName));
@@ -98,7 +105,7 @@ namespace SSOService.Services.Repositories.Relational.Implementations
                 return _response.FailedResponse(ReturnType, string.Format(ValidationConstants.EntityChangedByAnotherUser, current.Name));
             current.ConcurrencyStamp = Guid.NewGuid();
             _db.Clients.Update(current);
-            var result = await _db.SaveAndAuditChangesAsync(user.Id);
+            var result = await _db.SaveAndAuditChangesAsync(_currentUser.Id);
             return result > 0 ? _response.SuccessResponse(Todto(current)) :
             _response.FailedResponse(ReturnType);
         }
@@ -124,9 +131,16 @@ namespace SSOService.Services.Repositories.Relational.Implementations
                 return _response.FailedResponse(ReturnType, string.Format(ValidationConstants.FieldNotFound, EntityName));
             return _response.SuccessResponse(Todto(current));
         }
+        public async Task<GetClientDTO> Get(string code)
+        {
+            var current = await _db.Clients.FirstOrDefaultAsync(x => x.Code == code);
+            if (current == null)
+                return null;
+            return Todto(current);
+        }
         public async Task<Response<GetClientSubscription>> AddSubscription(Guid subscriptionId, Guid clientId)
         {
-            var user = (GetUserDTO)_httpContext.HttpContext.Items[HttpConstants.CurrentUser];
+
 
             var subscription = await _subscriptionRepository.GetSubscriptionById(subscriptionId);
             var client = await Exists(clientId);
@@ -141,19 +155,19 @@ namespace SSOService.Services.Repositories.Relational.Implementations
                 ClientId = clientId
             };
             await _db.AddAsync(newAuth);
-            var status = await _db.SaveAndAuditChangesAsync(user.Id) > 0;
+            var status = await _db.SaveAndAuditChangesAsync(_currentUser.Id) > 0;
             if (status) return _response.SuccessResponse(await ToDto(newAuth.Code));
             return _response.FailedResponse(ClientSubscriptionReturnType);
         }
         public async Task<Response<GetClientSubscription>> UpdateClientSubscription(Guid subscriptionId, Guid clientId, bool update)
         {
-            var user = (GetUserDTO)_httpContext.HttpContext.Items[HttpConstants.CurrentUser];
+
             var current = await _db.ClientSubscriptions.FirstOrDefaultAsync(x => x.SubscriptionId == subscriptionId && x.ClientId == clientId);
             if (current == null)
                 return _response.FailedResponse(ClientSubscriptionReturnType, string.Format(ValidationConstants.FieldNotFound, ClassNames.Client));
             current.IsActive = update ? !current.IsActive : current.IsActive;
             _db.Update(current);
-            var status = await _db.SaveAndAuditChangesAsync(user.Id) > 0;
+            var status = await _db.SaveAndAuditChangesAsync(_currentUser.Id) > 0;
             if (status) return _response.SuccessResponse(await ToDto(current.Code));
             return _response.FailedResponse(ClientSubscriptionReturnType);
         }
@@ -173,7 +187,7 @@ namespace SSOService.Services.Repositories.Relational.Implementations
                 ContactPersonEmail = client.ContactPersonEmail != null ? client.ContactPersonEmail.ToLower() : ValidationConstants.NotAvailable,
                 ContactPersonPhoneNumber = client.ContactPersonPhoneNumber ?? ValidationConstants.NotAvailable,
                 Country = client.Country != null ? client.Country.ToTitleCase() : ValidationConstants.NotAvailable,
-                Id = client.Id.ToString(),
+                Id = client.Id,
                 LogoUrl = client.LogoUrl ?? ValidationConstants.NotAvailable,
                 Motto = client.Motto ?? ValidationConstants.NotAvailable,
                 Name = client.Name.ToTitleCase(),
@@ -202,7 +216,7 @@ namespace SSOService.Services.Repositories.Relational.Implementations
 
         public async Task<Response<GetClientDTO>> Update(Guid id, UpdateClientDTO client)
         {
-            var user = (GetUserDTO)_httpContext.HttpContext.Items[HttpConstants.CurrentUser];
+
             var returnType = new GetClientDTO();
             var current = await Exists(id);
             if (current == null)
@@ -243,8 +257,8 @@ namespace SSOService.Services.Repositories.Relational.Implementations
                 return _response.FailedResponse(returnType, string.Format(ValidationConstants.EntityChangedByAnotherUser, client.Name));
             current.ConcurrencyStamp = Guid.NewGuid();
             _db.Clients.Update(current);
-            var result = await _db.SaveAndAuditChangesAsync(user.Id);
-            return result > 0 ? _response.SuccessResponse(Todto(current)) :
+            var status = await _db.SaveAndAuditChangesAsync(_currentUser.Id);
+            return status > 0 ? _response.SuccessResponse(Todto(current)) :
             _response.FailedResponse(returnType);
         }
         private async Task<Client> Exists(Guid id)

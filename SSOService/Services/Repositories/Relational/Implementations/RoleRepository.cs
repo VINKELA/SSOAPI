@@ -1,5 +1,5 @@
-﻿using Microsoft.AspNetCore.Http;
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
+using SSOService.Helpers;
 using SSOService.Models;
 using SSOService.Models.Constants;
 using SSOService.Models.DbContexts;
@@ -21,49 +21,48 @@ namespace SSOService.Services.Repositories.Relational.Implementations
         private readonly SSODbContext _db;
         private readonly IServiceResponse _response;
         private readonly IPermissionRepository _permissionRepository;
-        private readonly IHttpContextAccessor _httpContext;
         private readonly GetRoleDTO ReturnType = new();
+        private readonly GetUserDTO _currentUser = RequestContext.GetCurrentUser;
         public RoleRepository(SSODbContext db,
-            IServiceResponse serviceResponse, IPermissionRepository permissionRepository, IHttpContextAccessor httpContext)
+            IServiceResponse serviceResponse, IPermissionRepository permissionRepository)
         {
             _db = db;
             _response = serviceResponse;
             _permissionRepository = permissionRepository;
-            _httpContext = httpContext;
+
         }
         public async Task<Response<GetRoleDTO>> Create(CreateRoleDTO roleDTO)
         {
-            var currentUser = (GetUserDTO)_httpContext.HttpContext.Items[HttpConstants.CurrentUser];
             var application = new Role
             {
                 Name = roleDTO.Name,
                 ClientId = roleDTO.ClientId,
-                CreatedBy = currentUser.Email
+                CreatedBy = _currentUser.Email
             };
             await _db.AddAsync(application);
-            var status = await _db.SaveAndAuditChangesAsync(currentUser.Id) > 0;
+            var status = await _db.SaveAndAuditChangesAsync(_currentUser.Id) > 0;
             return status ? _response.SuccessResponse(ToDto(application))
                 : _response.FailedResponse(ReturnType);
         }
         public async Task<Response<GetRoleDTO>> Update(Guid id, UpdateRoleDTO roleDTO)
         {
-            var currentUser = (GetUserDTO)_httpContext.HttpContext.Items[HttpConstants.CurrentUser];
+
             var currentRole = _db.Roles.FirstOrDefault(x => x.Id == id);
             var application = new Role
             {
                 Name = roleDTO.Name?.ToLower() ?? currentRole.Name,
-                LastModifiedBy = currentUser.Email,
+                LastModifiedBy = _currentUser.Email,
                 Modified = DateTime.Now
             };
             await _db.AddAsync(currentRole);
-            var status = await _db.SaveAndAuditChangesAsync(currentUser.Id) > 0;
+            var status = await _db.SaveAndAuditChangesAsync(_currentUser.Id) > 0;
             return status ? _response.SuccessResponse(ToDto(currentRole))
                 : _response.FailedResponse(ReturnType);
         }
         public async Task<Response<GetRoleDTO>> ChangeState(Guid id, bool deactivate = false, bool delete = false)
         {
             var current = await Exists(id);
-            var currentUser = (GetUserDTO)_httpContext.HttpContext.Items[HttpConstants.CurrentUser];
+
             if (current == null)
                 return _response.FailedResponse(ReturnType, string.Format(ValidationConstants.FieldNotFound, ClassNames.Role));
             if (deactivate) current.IsActive = !deactivate;
@@ -78,7 +77,7 @@ namespace SSOService.Services.Repositories.Relational.Implementations
                 return _response.FailedResponse(ReturnType, string.Format(ValidationConstants.EntityChangedByAnotherUser, current.Id));
             current.ConcurrencyStamp = Guid.NewGuid();
             _db.Roles.Update(current);
-            var result = await _db.SaveAndAuditChangesAsync(currentUser.Id);
+            var result = await _db.SaveAndAuditChangesAsync(_currentUser.Id);
             return result > 0 ? _response.SuccessResponse(ToDto(current)) :
             _response.FailedResponse(ReturnType);
         }
@@ -91,7 +90,7 @@ namespace SSOService.Services.Repositories.Relational.Implementations
         }
         public async Task<Response<IEnumerable<GetRoleDTO>>> Get(string name)
         {
-            var user = (GetUserDTO)_httpContext.HttpContext.Items[HttpConstants.CurrentUser];
+
             var list = await _db.Roles.Where(x => !x.IsDeleted).ToListAsync();
             if (!string.IsNullOrEmpty(name))
             {
@@ -102,7 +101,7 @@ namespace SSOService.Services.Repositories.Relational.Implementations
         }
         public async Task<Response<GetRoleDTO>> AddClaim(CreateRoleClaim roleClaim)
         {
-            var user = (GetUserDTO)_httpContext.HttpContext.Items[HttpConstants.CurrentUser];
+
 
             var role = await Exists(roleClaim.RoleId);
 
@@ -115,25 +114,25 @@ namespace SSOService.Services.Repositories.Relational.Implementations
                 ClaimValue = roleClaim.ClaimValue
             };
             await _db.AddAsync(newclaim);
-            var status = await _db.SaveAndAuditChangesAsync(user.Id) > 0;
+            var status = await _db.SaveAndAuditChangesAsync(_currentUser.Id) > 0;
             if (status) return _response.SuccessResponse(ToDto(role));
             return _response.FailedResponse(ReturnType);
         }
         public async Task<Response<GetRoleDTO>> UpdateClaim(Guid claimId, Guid roleId, bool update)
         {
-            var user = (GetUserDTO)_httpContext.HttpContext.Items[HttpConstants.CurrentUser];
+
             var current = await _db.RoleClaims.FirstOrDefaultAsync(x => x.Id == claimId && x.RoleId == roleId);
             if (current == null)
                 return _response.FailedResponse(ReturnType, string.Format(ValidationConstants.FieldNotFound, ClassNames.Role));
             current.IsActive = update ? !current.IsActive : current.IsActive;
             _db.Update(current);
-            var status = await _db.SaveAndAuditChangesAsync(user.Id) > 0;
+            var status = await _db.SaveAndAuditChangesAsync(_currentUser.Id) > 0;
             if (status) return _response.SuccessResponse(ToDto(await Exists(roleId)));
             return _response.FailedResponse(ReturnType);
         }
         public async Task<Response<GetRoleDTO>> AddPermission(Guid permissionId, Guid roleId)
         {
-            var user = (GetUserDTO)_httpContext.HttpContext.Items[HttpConstants.CurrentUser];
+
 
             var permission = await _permissionRepository.Get(permissionId);
             var role = await Exists(roleId);
@@ -148,19 +147,19 @@ namespace SSOService.Services.Repositories.Relational.Implementations
                 RoleId = roleId
             };
             await _db.AddAsync(newAuth);
-            var status = await _db.SaveAndAuditChangesAsync(user.Id) > 0;
+            var status = await _db.SaveAndAuditChangesAsync(_currentUser.Id) > 0;
             if (status) return _response.SuccessResponse(ToDto(role));
             return _response.FailedResponse(ReturnType);
         }
         public async Task<Response<GetRoleDTO>> UpdateRolePermission(Guid permissionId, Guid roleId, bool update)
         {
-            var user = (GetUserDTO)_httpContext.HttpContext.Items[HttpConstants.CurrentUser];
+
             var current = await _db.RolePermissions.FirstOrDefaultAsync(x => x.PermissionId == permissionId && x.RoleId == roleId);
             if (current == null)
                 return _response.FailedResponse(ReturnType, string.Format(ValidationConstants.FieldNotFound, ClassNames.Role));
             current.IsActive = update ? !current.IsActive : current.IsActive;
             _db.Update(current);
-            var status = await _db.SaveAndAuditChangesAsync(user.Id) > 0;
+            var status = await _db.SaveAndAuditChangesAsync(_currentUser.Id) > 0;
             if (status) return _response.SuccessResponse(ToDto(await Exists(roleId)));
             return _response.FailedResponse(ReturnType);
         }

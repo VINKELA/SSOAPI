@@ -1,4 +1,5 @@
 ﻿using SSOService.Models.Enums;
+using System;
 
 namespace SSOService.Models.DTOs
 {
@@ -18,7 +19,7 @@ namespace SSOService.Models.DTOs
         public string ParentClientName { get; set; }
         public string ClientTypeName { get; set; }
         public bool IsActive { get; set; }
-        public string Id { get; set; }
+        public Guid Id { get; set; }
         public byte[] Logo { get; set; }
 
     }

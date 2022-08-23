@@ -1,5 +1,5 @@
-﻿using Microsoft.AspNetCore.Http;
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
+using SSOService.Helpers;
 using SSOService.Models;
 using SSOService.Models.Constants;
 using SSOService.Models.DbContexts;
@@ -21,49 +21,48 @@ namespace SSOService.Subscriptions.Repositories.Relational.Implementations
         private readonly IServiceResponse _response;
         private readonly GetSubscriptionDTO ReturnType = new();
         private readonly IResourceRepository _serviceRepository;
-        private readonly IHttpContextAccessor _httpContext;
+        private readonly GetUserDTO _currentUser = RequestContext.GetCurrentUser;
 
         public SubscriptionRepository(SSODbContext db,
-            IServiceResponse subscriptionResponse, IResourceRepository serviceRepository, IHttpContextAccessor httpContext)
+            IServiceResponse subscriptionResponse, IResourceRepository serviceRepository)
         {
             _db = db;
             _response = subscriptionResponse;
             _serviceRepository = serviceRepository;
-            _httpContext = httpContext;
         }
         public async Task<Response<GetSubscriptionDTO>> Create(CreateSubscriptionDTO subscriptionDTO)
         {
-            var currentUser = (GetUserDTO)_httpContext.HttpContext.Items[HttpConstants.CurrentUser];
+
             var application = new Subscription
             {
                 Name = subscriptionDTO.Name,
                 ClientId = subscriptionDTO.ClientId.GetValueOrDefault(),
-                CreatedBy = currentUser.Email
+                CreatedBy = _currentUser.Email
             };
             await _db.AddAsync(application);
-            var status = await _db.SaveAndAuditChangesAsync(currentUser.Id) > 0;
+            var status = await _db.SaveAndAuditChangesAsync(_currentUser.Id) > 0;
             return status ? _response.SuccessResponse(ToDto(application))
                 : _response.FailedResponse(ReturnType);
         }
         public async Task<Response<GetSubscriptionDTO>> Update(Guid id, UpdateSubscriptionDTO subscriptionDTO)
         {
-            var currentUser = (GetUserDTO)_httpContext.HttpContext.Items[HttpConstants.CurrentUser];
+
             var currentSubscription = _db.Subscriptions.FirstOrDefault(x => x.Id == id);
             var application = new Subscription
             {
                 Name = subscriptionDTO.Name?.ToLower() ?? currentSubscription.Name,
-                LastModifiedBy = currentUser.Email,
+                LastModifiedBy = _currentUser.Email,
                 Modified = DateTime.Now
             };
             await _db.AddAsync(currentSubscription);
-            var status = await _db.SaveAndAuditChangesAsync(currentUser.Id) > 0;
+            var status = await _db.SaveAndAuditChangesAsync(_currentUser.Id) > 0;
             return status ? _response.SuccessResponse(ToDto(currentSubscription))
                 : _response.FailedResponse(ReturnType);
         }
         public async Task<Response<GetSubscriptionDTO>> ChangeState(Guid id, bool deactivate = false, bool delete = false)
         {
             var current = await Exists(id);
-            var currentUser = (GetUserDTO)_httpContext.HttpContext.Items[HttpConstants.CurrentUser];
+
             if (current == null)
                 return _response.FailedResponse(ReturnType, string.Format(ValidationConstants.FieldNotFound, ClassNames.Subscription));
             if (deactivate) current.IsActive = !deactivate;
@@ -78,7 +77,7 @@ namespace SSOService.Subscriptions.Repositories.Relational.Implementations
                 return _response.FailedResponse(ReturnType, string.Format(ValidationConstants.EntityChangedByAnotherUser, current.Id));
             current.ConcurrencyStamp = Guid.NewGuid();
             _db.Subscriptions.Update(current);
-            var result = await _db.SaveAndAuditChangesAsync(currentUser.Id);
+            var result = await _db.SaveAndAuditChangesAsync(_currentUser.Id);
             return result > 0 ? _response.SuccessResponse(ToDto(current)) :
             _response.FailedResponse(ReturnType);
         }
@@ -98,7 +97,7 @@ namespace SSOService.Subscriptions.Repositories.Relational.Implementations
 
         public async Task<Response<IEnumerable<GetSubscriptionDTO>>> Get(string name)
         {
-            var user = (GetUserDTO)_httpContext.HttpContext.Items[HttpConstants.CurrentUser];
+
             var list = await _db.Subscriptions.Where(x => !x.IsDeleted).ToListAsync();
             if (!string.IsNullOrEmpty(name))
             {
@@ -109,7 +108,7 @@ namespace SSOService.Subscriptions.Repositories.Relational.Implementations
         }
         public async Task<Response<GetSubscriptionDTO>> AddService(Guid serviceId, Guid subcriptionId)
         {
-            var user = (GetUserDTO)_httpContext.HttpContext.Items[HttpConstants.CurrentUser];
+
 
             var service = await _serviceRepository.Get(serviceId);
             var subscription = await Exists(subcriptionId);
@@ -124,19 +123,19 @@ namespace SSOService.Subscriptions.Repositories.Relational.Implementations
                 SubscriptionId = subcriptionId
             };
             await _db.AddAsync(newAuth);
-            var status = await _db.SaveAndAuditChangesAsync(user.Id) > 0;
+            var status = await _db.SaveAndAuditChangesAsync(_currentUser.Id) > 0;
             if (status) return _response.SuccessResponse(ToDto(subscription));
             return _response.FailedResponse(ReturnType);
         }
         public async Task<Response<GetSubscriptionDTO>> UpdateSubscriptionService(Guid serviceId, Guid subcriptionId, bool update)
         {
-            var user = (GetUserDTO)_httpContext.HttpContext.Items[HttpConstants.CurrentUser];
+
             var current = await _db.SubscriptionServices.FirstOrDefaultAsync(x => x.ResourceId == serviceId && x.SubscriptionId == subcriptionId);
             if (current == null)
                 return _response.FailedResponse(ReturnType, string.Format(ValidationConstants.FieldNotFound, ClassNames.Subscription));
             current.IsActive = update ? !current.IsActive : current.IsActive;
             _db.Update(current);
-            var status = await _db.SaveAndAuditChangesAsync(user.Id) > 0;
+            var status = await _db.SaveAndAuditChangesAsync(_currentUser.Id) > 0;
             if (status) return _response.SuccessResponse(ToDto(await Exists(current.SubscriptionId)));
             return _response.FailedResponse(ReturnType);
         }

@@ -6,6 +6,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using SSOService.MiddleWares;
@@ -19,9 +20,12 @@ using SSOService.Services.Repositories.NonRelational.Interfaces;
 using SSOService.Services.Repositories.Relational.Implementations;
 using SSOService.Services.Repositories.Relational.Interfaces;
 using SSOService.Subscriptions.Repositories.Relational.Implementations;
+using StackifyLib;
+using StackifyLib.CoreLogger;
 using System;
 using System.Collections.Generic;
 using System.Text;
+
 
 namespace SSOService
 {
@@ -32,9 +36,14 @@ namespace SSOService
         private const string DBConnection = "DefaultConnection";
         private const string SwaggerUrl = "/swagger/v1/swagger.json";
 
-        public Startup(IConfiguration configuration)
+        public Startup(IWebHostEnvironment env)
         {
-            Configuration = configuration;
+            var builder = new ConfigurationBuilder()
+              .SetBasePath(env.ContentRootPath)
+              .AddJsonFile($"appsettings.json", optional: true, reloadOnChange: true)
+              .AddEnvironmentVariables();
+            Configuration = builder.Build();
+            Configuration.ConfigureStackifyLogging();
         }
 
         public IConfiguration Configuration { get; }
@@ -66,7 +75,7 @@ namespace SSOService
 
 
 
-
+            services.AddLogging();
 
 
             services.AddAuthentication(options =>
@@ -132,7 +141,7 @@ namespace SSOService
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
-        public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
+        public void Configure(IApplicationBuilder app, IWebHostEnvironment env, ILoggerFactory logger)
         {
             if (env.IsDevelopment())
             {
@@ -140,7 +149,8 @@ namespace SSOService
                 app.UseSwagger();
                 app.UseSwaggerUI(c => c.SwaggerEndpoint(SwaggerUrl, APPName));
             }
-
+            logger.AddStackify();
+            app.UseMiddleware<StackifyMiddleware.RequestTracerMiddleware>();
             app.UseHttpsRedirection();
             app.UseRouting();
             app.UseAuthorization();

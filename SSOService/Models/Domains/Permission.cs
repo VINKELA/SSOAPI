@@ -8,8 +8,7 @@ namespace SSOService.Models.Domains
     {
         public PermissionType PermissionType { get; set; }
         public Scope Scope { get; set; }
-        public Entity Entity { get; set; }
-        public Guid ClientId { get; set; }
+        public Guid ResourceId { get; set; }
         public string Name { get; set; }
 
     }

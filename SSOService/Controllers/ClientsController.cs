@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using SSOService.Extensions;
 using SSOService.Models;
 using SSOService.Models.DTOs;
 using SSOService.Models.Enums;
@@ -11,6 +12,7 @@ using System.Threading.Tasks;
 namespace SSOService.Controllers
 {
     [Route("api/[controller]")]
+    [AuthorizedRequest]
     [ApiController]
     public class ClientsController : ControllerBase
     {

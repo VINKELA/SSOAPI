@@ -1,5 +1,5 @@
-﻿using Microsoft.AspNetCore.Http;
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using SSOService.Extensions;
 using SSOService.Helpers;
 using SSOService.Models;
@@ -35,24 +35,27 @@ namespace SSOService.Services.Repositories.Relational.Implementations
         private readonly SSODbContext _db;
         private readonly IServiceResponse _response;
         private readonly IFileRepository _fileRepository;
-        private readonly IHttpContextAccessor _httpContext;
         private readonly GetUserDTO ReturnType = new();
         private readonly IPermissionRepository _permissionRepository;
         private readonly ISubscriptionRepository _subscriptionRepository;
         private readonly IRoleRepository _roleRepository;
-        public UserRepository(IServiceResponse response, SSODbContext db, IFileRepository fileRepository,
-            IHttpContextAccessor httpContext, IPermissionRepository permissionRepository, ISubscriptionRepository subscriptionRepository, IRoleRepository roleRepository)
+        private readonly ILogger<User> _logger;
+        private readonly GetUserDTO _currentUser = RequestContext.GetCurrentUser;
+
+        public UserRepository(IServiceResponse response, SSODbContext db, IFileRepository fileRepository, ILogger<User> logger,
+           IPermissionRepository permissionRepository, ISubscriptionRepository subscriptionRepository, IRoleRepository roleRepository)
         {
             _response = response;
             _db = db;
             _fileRepository = fileRepository;
-            _httpContext = httpContext;
             _permissionRepository = permissionRepository;
             _subscriptionRepository = subscriptionRepository;
             _roleRepository = roleRepository;
+            _logger = logger;
         }
-        public async Task<Response<GetUserDTO>> Save(CreateUserDTO user)
+        public async Task<Response<GetUserDTO>> CreateAsync(CreateUserDTO user)
         {
+            _logger.LogInformation("Logs working");
             if (string.IsNullOrEmpty(user.FirstName))
                 return _response.FailedResponse(ReturnType,
                     string.Format(ValidationConstants.EmptyRequiredFieldResponse, FirstName));
@@ -93,17 +96,83 @@ namespace SSOService.Services.Repositories.Relational.Implementations
                 return _response.FailedResponse(ReturnType, PasswordConfirmationMismatch);
             List<Guid> clients = new();
             bool hasClient;
-            if (user.Clients != null && user.Clients.Count > 0)
+            if (!string.IsNullOrEmpty(user.ClientId))
             {
-                for (int i = 0; i < user.Clients.Count; i++)
-                {
-                    var client = user.Clients[i];
-                    hasClient = Guid.TryParse(client, out Guid clientGuid);
-                    var clientDetais = _db.Clients.Any(x => x.Id == clientGuid);
-                    if (!clientDetais) return _response.FailedResponse(ReturnType,
-                        string.Format(ValidationConstants.InvalidFieldResponse, user.Clients, ClassNames.Client));
-                    clients.Add(clientGuid);
-                }
+                var client = user.ClientId.Trim();
+                hasClient = Guid.TryParse(client, out Guid clientGuid);
+                var clientDetais = _db.Clients.Any(x => x.Id == clientGuid);
+                if (!clientDetais) return _response.FailedResponse(ReturnType,
+                    string.Format(ValidationConstants.InvalidFieldResponse, user.ClientId, ClassNames.Client));
+                clients.Add(clientGuid);
+            }
+            string filePath = null;
+            if (user.File != null)
+            {
+                filePath = await _fileRepository.Save(user.File, email, FileType.UserImage);
+            }
+            var username = !string.IsNullOrEmpty(user.UserName) ? user.UserName.Trim().ToUpper()
+                : firstname;
+            var newUser = new User()
+            {
+                FirstName = firstname,
+                LastName = lastname,
+                Email = email,
+                UserName = username,
+                PasswordHash = HashEngine.GetHash(user.Password),
+                PhoneNumber = phone,
+                FilePath = filePath
+
+            };
+            _db.Users.Add(newUser);
+            var result = await _db.SaveAndAuditChangesAsync(GetLoggedInUser()?.Id);
+            var createdUser = _db.Users.FirstOrDefault(x => x.Email == user.Email);
+            if (result > 0)
+            {
+                if (!string.IsNullOrEmpty(user.ClientId))
+                    await RegisterUserWithClient(createdUser.Id, Guid.Parse(user.ClientId));
+                return _response.SuccessResponse(ToDto(createdUser));
+            }
+            return _response.FailedResponse(ReturnType);
+        }
+        public async Task<GetUserDTO> Save(CreateUserDTO user)
+        {
+            if (string.IsNullOrEmpty(user.FirstName))
+                return null;
+            var firstname = user.FirstName.Trim().ToUpper();
+            if (string.IsNullOrEmpty(user.LastName))
+                return null;
+            var lastname = user.LastName.Trim().ToUpper();
+            if (string.IsNullOrEmpty(user.Email))
+                return null;
+            if (!user.Email.IsValidEmailFormat())
+                return null;
+            var email = user.Email.Trim().ToLower();
+            if (_db.Users.Any(x => x.Email == email))
+                return null;
+            if (string.IsNullOrEmpty(user.PhoneNumber))
+                return ReturnType;
+            var phone = user.PhoneNumber.Trim().ToLower();
+            if (IsPhoneNumberValid(phone))
+                return ReturnType;
+            if (_db.Users.Any(x => x.PhoneNumber == phone))
+                return null;
+            if (string.IsNullOrEmpty(user.Password))
+                return null;
+            if (!ValidatePassword(user.Password))
+                return null;
+            if (string.IsNullOrEmpty(user.Confirmation))
+                return null;
+            if (user.Confirmation != user.Password)
+                return null;
+            List<Guid> clients = new();
+            bool hasClient;
+            if (!string.IsNullOrEmpty(user.ClientId))
+            {
+                var client = user.ClientId.Trim();
+                hasClient = Guid.TryParse(client, out Guid clientGuid);
+                var clientDetais = _db.Clients.Any(x => x.Id == clientGuid);
+                if (!clientDetais) return null;
+                clients.Add(clientGuid);
             }
             string filePath = null;
             if (user.File != null)
@@ -129,11 +198,12 @@ namespace SSOService.Services.Repositories.Relational.Implementations
             if (createdUser != null)
             {
                 if (clients.Count > 0)
-                    await RegisterUserWithClient(createdUser.Id, clients);
-                return _response.SuccessResponse(ToDto(createdUser));
+                    await RegisterUserWithClient(createdUser.Id, Guid.Parse(user.ClientId));
+                return ToDto(createdUser);
             }
-            return _response.FailedResponse(ReturnType);
+            return null;
         }
+
         public async Task<Response<GetUserDTO>> Update(Guid id, UpdateUserDTO user)
         {
             var current = await Exists(id);
@@ -145,20 +215,15 @@ namespace SSOService.Services.Repositories.Relational.Implementations
             var firstname = user.FirstName != null ? user.FirstName.Trim().ToUpper() : current.FirstName;
             var lastname = user.LastName != null ? user.LastName.Trim().ToUpper() : current.LastName;
             var username = user.UserName != null ? user.UserName.Trim().ToUpper() : current.UserName;
-            Guid cliendId = Guid.Empty;
-            List<Guid> clients = new();
+            Guid clientId = Guid.Empty;
             bool hasClient;
-            if (user.ClientIds.Count > 0)
+            if (!string.IsNullOrEmpty(user.ClientId))
             {
-                for (int i = 0; i < user.ClientIds.Count; i++)
-                {
-                    var client = user.ClientIds[i];
-                    hasClient = Guid.TryParse(client, out Guid clientGuid);
-                    var clientDetais = _db.Clients.Any(x => x.Id == clientGuid);
-                    if (!clientDetais) return _response.FailedResponse(ReturnType,
-                        string.Format(ValidationConstants.InvalidFieldResponse, client, ClassNames.Client));
-                    clients.Add(clientGuid);
-                }
+                var client = user.ClientId.Trim();
+                hasClient = Guid.TryParse(client, out clientId);
+                var clientDetais = _db.Clients.Any(x => x.Id == clientId);
+                if (!clientDetais) return _response.FailedResponse(ReturnType,
+                    string.Format(ValidationConstants.InvalidFieldResponse, user.ClientId, ClassNames.Client));
             }
             string filePath = current.FilePath;
             if (user.File != null)
@@ -178,8 +243,8 @@ namespace SSOService.Services.Repositories.Relational.Implementations
             var result = await _db.SaveAndAuditChangesAsync();
             if (result > 0)
             {
-                if (clients.Count > 0)
-                    await RegisterUserWithClient(current.Id, clients);
+                if (!string.IsNullOrEmpty(user.ClientId))
+                    await RegisterUserWithClient(current.Id, clientId);
                 _response.SuccessResponse(ToDto(current));
             }
 
@@ -245,7 +310,7 @@ namespace SSOService.Services.Repositories.Relational.Implementations
             return _response.SuccessResponse(users);
         }
         public GetUserDTO GetLoggedInUser()
-            => (GetUserDTO)_httpContext.HttpContext.Items[HttpConstants.CurrentUser];
+            => RequestContext.GetCurrentUser;
 
 
         public async Task<Response<GetUserDTO>> AddPermission(Guid permissionId, Guid userId)
@@ -277,7 +342,7 @@ namespace SSOService.Services.Repositories.Relational.Implementations
                 return _response.FailedResponse(ReturnType, string.Format(ValidationConstants.FieldNotFound, ClassNames.User));
             current.IsActive = update ? !current.IsActive : current.IsActive;
             _db.Update(current);
-            var status = await _db.SaveAndAuditChangesAsync(user.Id) > 0;
+            var status = await _db.SaveAndAuditChangesAsync(_currentUser.Id) > 0;
             if (status) return _response.SuccessResponse(ToDto(await Exists(current.UserId)));
             return _response.FailedResponse(ReturnType);
         }
@@ -473,10 +538,8 @@ namespace SSOService.Services.Repositories.Relational.Implementations
 
             return Regex.IsMatch(phoneNumber, re);
         }
-        private async Task<bool> RegisterUserWithClient(Guid userId, List<Guid> clients)
+        public async Task<bool> RegisterUserWithClient(Guid userId, Guid clients)
         {
-            _db.UserClients.AddRange(clients
-               .Select(x => new UserClient { UserId = userId, ClientId = x }));
             var result = await _db.SaveAndAuditChangesAsync(GetLoggedInUser().Id);
             return result > 0;
         }

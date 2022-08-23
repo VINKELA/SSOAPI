@@ -1,5 +1,4 @@
 ﻿using Microsoft.AspNetCore.Http;
-using System.Collections.Generic;
 
 namespace SSOService.Models.DTOs.User
 {
@@ -12,7 +11,7 @@ namespace SSOService.Models.DTOs.User
         public string UserName { get; set; }
         public string Password { get; set; }
         public string Confirmation { get; set; }
-        public List<string> Clients { get; set; }
+        public string ClientId { get; set; }
         public IFormFile File { get; set; }
     }
 }

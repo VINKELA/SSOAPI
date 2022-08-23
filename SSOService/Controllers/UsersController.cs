@@ -51,7 +51,7 @@ namespace SSOService.Controllers
         [HttpPost]
         [AllowAnonymous]
         public async Task<ActionResult<Response<GetUserDTO>>> Post([FromForm] CreateUserDTO user)
-            => Ok(await _user.Save(user));
+            => Ok(await _user.CreateAsync(user));
 
         // DELETE: api/Users/5
         [HttpDelete("{id}")]

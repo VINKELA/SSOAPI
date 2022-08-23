@@ -1,6 +1,6 @@
-﻿using SSOService.Models.Enums;
-using SSOService.Models;
+﻿using SSOService.Models;
 using SSOService.Models.DTOs.Application;
+using SSOService.Models.Enums;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
@@ -15,6 +15,8 @@ namespace SSOService.Services.Repositories.Relational.Interfaces
         Task<Response<GetApplicationDTO>> ChangeState(Guid id, bool deactivate = false, bool delete = false);
         Task<Response<GetApplicationDTO>> Update(Guid id, UpdateApplicationDTO applicationDTO);
         Task<Response<GetApplicationDTO>> Create(CreateApplicationDTO applicationDTO);
+        Task<Response<GetApplicationDTO>> Get(AppLoginDTO app);
+
 
     }
 }

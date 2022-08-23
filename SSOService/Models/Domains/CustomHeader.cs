@@ -8,6 +8,6 @@ namespace SSOService.Models.Domains
         public string Name { get; set; }
         public string Value { get; set; }
         public CustomParameterType CustomParameterType { get; set; }
-        public Guid ServiceId { get; set; }
+        public Guid ApplicationResourceId { get; set; }
     }
 }

@@ -8,7 +8,7 @@ namespace SSOService.Services.Repositories.Relational.Interfaces
 {
     public interface IUserRepository
     {
-        Task<Response<GetUserDTO>> Save(CreateUserDTO user);
+        Task<Response<GetUserDTO>> CreateAsync(CreateUserDTO user);
         Task<Response<GetUserDTO>> ChangeState(Guid id, bool deactivate = false, bool delete = false);
         Task<Response<GetUserDTO>> Get(Guid id);
         Task<Response<IEnumerable<GetUserDTO>>> Get(string name, string email,
@@ -17,5 +17,7 @@ namespace SSOService.Services.Repositories.Relational.Interfaces
         Task<Response<GetUserDTO>> Get(string emailOrUsername);
         Task<GetUserDTO> GetUserByEmailOrUsername(string emailOrUsername);
         GetUserDTO GetLoggedInUser();
+        Task<bool> RegisterUserWithClient(Guid userId, Guid clients);
+
     }
 }

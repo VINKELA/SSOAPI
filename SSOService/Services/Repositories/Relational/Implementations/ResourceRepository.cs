@@ -1,5 +1,5 @@
-﻿using Microsoft.AspNetCore.Http;
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
+using SSOService.Helpers;
 using SSOService.Models;
 using SSOService.Models.Constants;
 using SSOService.Models.DbContexts;
@@ -17,50 +17,49 @@ namespace SSOService.Services.Repositories.Relational.Implementations
 {
     public class ResourceRepository : IResourceRepository
     {
-        private readonly IHttpContextAccessor _httpContext;
         private readonly SSODbContext _db;
         private readonly IServiceResponse _response;
         private readonly GetResourceDTO ReturnType = new();
-        public ResourceRepository(IHttpContextAccessor httpContext, SSODbContext db,
-            IServiceResponse serviceResponse)
+        private readonly GetUserDTO _currentUser = RequestContext.GetCurrentUser;
+
+        public ResourceRepository(SSODbContext db, IServiceResponse serviceResponse)
         {
-            _httpContext = httpContext;
             _db = db;
             _response = serviceResponse;
         }
         public async Task<Response<GetResourceDTO>> Create(CreateResourceDTO serviceDTO)
         {
-            var currentUser = (GetUserDTO)_httpContext.HttpContext.Items[HttpConstants.CurrentUser];
+
             var application = new Resource
             {
                 Name = serviceDTO.Name,
                 ApplicationId = serviceDTO.ClientId,
-                CreatedBy = currentUser.Email
+                CreatedBy = _currentUser.Email
             };
             await _db.AddAsync(application);
-            var status = await _db.SaveAndAuditChangesAsync(currentUser.Id) > 0;
+            var status = await _db.SaveAndAuditChangesAsync(_currentUser.Id) > 0;
             return status ? _response.SuccessResponse(ToDto(application))
                 : _response.FailedResponse(ReturnType);
         }
         public async Task<Response<GetResourceDTO>> Update(Guid id, UpdateResourceDTO serviceDTO)
         {
-            var currentUser = (GetUserDTO)_httpContext.HttpContext.Items[HttpConstants.CurrentUser];
+
             var currentService = _db.Resources.FirstOrDefault(x => x.Id == id);
             var application = new Resource
             {
                 Name = serviceDTO.Name?.ToLower() ?? currentService.Name,
-                LastModifiedBy = currentUser.Email,
+                LastModifiedBy = _currentUser.Email,
                 Modified = DateTime.Now
             };
             await _db.AddAsync(currentService);
-            var status = await _db.SaveAndAuditChangesAsync(currentUser.Id) > 0;
+            var status = await _db.SaveAndAuditChangesAsync(_currentUser.Id) > 0;
             return status ? _response.SuccessResponse(ToDto(currentService))
                 : _response.FailedResponse(ReturnType);
         }
         public async Task<Response<GetResourceDTO>> ChangeState(Guid id, bool deactivate = false, bool delete = false)
         {
             var current = await Exists(id);
-            var currentUser = (GetUserDTO)_httpContext.HttpContext.Items[HttpConstants.CurrentUser];
+
             if (current == null)
                 return _response.FailedResponse(ReturnType, string.Format(ValidationConstants.FieldNotFound, ClassNames.Resource));
             if (deactivate) current.IsActive = !deactivate;
@@ -75,7 +74,7 @@ namespace SSOService.Services.Repositories.Relational.Implementations
                 return _response.FailedResponse(ReturnType, string.Format(ValidationConstants.EntityChangedByAnotherUser, current.Id));
             current.ConcurrencyStamp = Guid.NewGuid();
             _db.Resources.Update(current);
-            var result = await _db.SaveAndAuditChangesAsync(currentUser.Id);
+            var result = await _db.SaveAndAuditChangesAsync(_currentUser.Id);
             return result > 0 ? _response.SuccessResponse(ToDto(current)) :
             _response.FailedResponse(ReturnType);
         }
@@ -88,7 +87,7 @@ namespace SSOService.Services.Repositories.Relational.Implementations
         }
         public async Task<Response<IEnumerable<GetResourceDTO>>> Get(string name)
         {
-            var user = (GetUserDTO)_httpContext.HttpContext.Items[HttpConstants.CurrentUser];
+
             var list = await _db.Resources.Where(x => !x.IsDeleted).ToListAsync();
             if (!string.IsNullOrEmpty(name))
             {

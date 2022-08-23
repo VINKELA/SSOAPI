@@ -4,6 +4,7 @@ using SSOService.Constants;
 using SSOService.Models.Constants;
 using SSOService.Models.DbContexts;
 using SSOService.Models.Domains;
+using SSOService.Models.DTOs.Application;
 using SSOService.Models.DTOs.Auth;
 using SSOService.Models.DTOs.User;
 using SSOService.Services.General.Interfaces;
@@ -54,6 +55,26 @@ namespace SSOService.Services.General.Implementation
             };
             return tokenDTO;
         }
+        public async Task<TokenDTO> BuildToken(GetApplicationDTO app)
+        {
+            var code = Guid.NewGuid().ToString();
+            var claims = new List<Claim>
+            {
+                new Claim(AppClaimTypes.AppName, app.Name),
+             };
+            var securityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(Configuration[JWTConstants.Key]));
+            var credentials = new SigningCredentials(securityKey, SecurityAlgorithms.HmacSha256Signature);
+            var tokenDescriptor = new JwtSecurityToken(Configuration[JWTConstants.Issuer], null, claims,
+                expires: DateTime.Now.AddMinutes(EXPIRY_DURATION_MINUTES), signingCredentials: credentials);
+            await SaveRefreshToken(code, app.Id);
+            var tokenDTO = new TokenDTO
+            {
+                RefreshToken = code,
+                Token = new JwtSecurityTokenHandler().WriteToken(tokenDescriptor)
+            };
+            return tokenDTO;
+        }
+
         public bool IsTokenValid(string token)
         {
             var mySecret = Encoding.UTF8.GetBytes(Configuration[JWTConstants.Key]);
