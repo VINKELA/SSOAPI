@@ -10,8 +10,8 @@ using SSOService.Models.DbContexts;
 namespace SSOService.Migrations
 {
     [DbContext(typeof(SSODbContext))]
-    [Migration("20220814122442_initailMigration")]
-    partial class initailMigration
+    [Migration("20220913092212_initial-create")]
+    partial class initialcreate
     {
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
@@ -68,7 +68,7 @@ namespace SSOService.Migrations
                     b.ToTable("Applications");
                 });
 
-            modelBuilder.Entity("SSOService.Models.Domains.ApplicationAuthentification", b =>
+            modelBuilder.Entity("SSOService.Models.Domains.ApplicationAuthentication", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -377,6 +377,9 @@ namespace SSOService.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<Guid>("ApplicationResourceId")
+                        .HasColumnType("uniqueidentifier");
+
                     b.Property<DateTime>("CreatedOn")
                         .HasColumnType("datetime2");
 
@@ -392,9 +395,6 @@ namespace SSOService.Migrations
                     b.Property<string>("Name")
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<Guid>("ServiceId")
-                        .HasColumnType("uniqueidentifier");
-
                     b.Property<string>("Value")
                         .HasColumnType("nvarchar(max)");
 
@@ -409,9 +409,6 @@ namespace SSOService.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<Guid>("ClientId")
-                        .HasColumnType("uniqueidentifier");
-
                     b.Property<string>("Code")
                         .HasColumnType("nvarchar(max)");
 
@@ -423,9 +420,6 @@ namespace SSOService.Migrations
 
                     b.Property<DateTime>("CreatedOn")
                         .HasColumnType("datetime2");
-
-                    b.Property<int>("Entity")
-                        .HasColumnType("int");
 
                     b.Property<bool>("IsActive")
                         .HasColumnType("bit");
@@ -444,6 +438,9 @@ namespace SSOService.Migrations
 
                     b.Property<int>("PermissionType")
                         .HasColumnType("int");
+
+                    b.Property<Guid>("ResourceId")
+                        .HasColumnType("uniqueidentifier");
 
                     b.Property<int>("Scope")
                         .HasColumnType("int");
@@ -745,6 +742,9 @@ namespace SSOService.Migrations
                     b.Property<int>("AccessFailedCount")
                         .HasColumnType("int");
 
+                    b.Property<Guid?>("ClientId")
+                        .HasColumnType("uniqueidentifier");
+
                     b.Property<string>("Code")
                         .HasColumnType("nvarchar(max)");
 
@@ -808,32 +808,6 @@ namespace SSOService.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("Users");
-                });
-
-            modelBuilder.Entity("SSOService.Models.Domains.UserClient", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<Guid>("ClientId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<DateTime>("CreatedOn")
-                        .HasColumnType("datetime2");
-
-                    b.Property<bool>("IsActive")
-                        .HasColumnType("bit");
-
-                    b.Property<bool>("IsDeleted")
-                        .HasColumnType("bit");
-
-                    b.Property<Guid>("UserId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("UserClients");
                 });
 
             modelBuilder.Entity("SSOService.Models.Domains.UserDevice", b =>

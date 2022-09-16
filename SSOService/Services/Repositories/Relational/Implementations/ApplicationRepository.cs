@@ -47,7 +47,7 @@ namespace SSOService.Services.Repositories.Relational.Implementations
                 CreatedBy = _currentUser.Email
             };
             await _db.AddAsync(application);
-            var status = await _db.SaveAndAuditChangesAsync(_currentUser.Id) > 0;
+            var status = await _db.SaveChangesAsync() > 0;
             return status ? _response.SuccessResponse(ToDto(application))
                 : _response.FailedResponse(ReturnType);
         }
@@ -64,7 +64,7 @@ namespace SSOService.Services.Repositories.Relational.Implementations
                 Modified = DateTime.Now
             };
             await _db.AddAsync(currentApplication);
-            var status = await _db.SaveAndAuditChangesAsync(_currentUser.Id) > 0;
+            var status = await _db.SaveChangesAsync() > 0;
             return status ? _response.SuccessResponse(ToDto(currentApplication))
                 : _response.FailedResponse(ReturnType);
         }
@@ -86,7 +86,7 @@ namespace SSOService.Services.Repositories.Relational.Implementations
                 return _response.FailedResponse(ReturnType, string.Format(ValidationConstants.EntityChangedByAnotherUser, current.Id));
             current.ConcurrencyStamp = Guid.NewGuid();
             _db.Applications.Update(current);
-            var result = await _db.SaveAndAuditChangesAsync(_currentUser.Id);
+            var result = await _db.SaveChangesAsync();
             return result > 0 ? _response.SuccessResponse(ToDto(current)) :
             _response.FailedResponse(ReturnType);
         }
@@ -99,7 +99,7 @@ namespace SSOService.Services.Repositories.Relational.Implementations
         }
         public async Task<Response<GetApplicationDTO>> Get(AppLoginDTO app)
         {
-            var current = await _db.ApplicationAuthentifications.FirstOrDefaultAsync(x => x.Code == app.ClientCode && x.ClientSecret == app.ClientSecret);
+            var current = await _db.ApplicationAuthentications.FirstOrDefaultAsync(x => x.Code == app.ClientCode && x.ClientSecret == app.ClientSecret);
             if (current == null)
                 return _response.FailedResponse(ReturnType, string.Format(ValidationConstants.FieldNotFound, ClassNames.Application));
             return await Get(current.ClientApplicationId);
@@ -135,7 +135,7 @@ namespace SSOService.Services.Repositories.Relational.Implementations
             applicationPermission.IsActive = update ? !applicationPermission.IsActive : applicationPermission.IsActive;
             applicationPermission.IsDeleted = !update ? !applicationPermission.IsDeleted : applicationPermission.IsDeleted;
             _db.Update(applicationPermission);
-            var status = await _db.SaveAndAuditChangesAsync(_currentUser.Id) > 0;
+            var status = await _db.SaveChangesAsync() > 0;
             if (status) return await Get(applicationId);
             return _response.FailedResponse(ReturnType);
         }
@@ -156,7 +156,7 @@ namespace SSOService.Services.Repositories.Relational.Implementations
                 PermissionId = permissionId
             }
                 );
-            var status = await _db.SaveAndAuditChangesAsync(_currentUser.Id) > 0;
+            var status = await _db.SaveChangesAsync() > 0;
             if (status) return await Get(applicationId);
             return _response.FailedResponse(ReturnType);
         }
@@ -176,7 +176,7 @@ namespace SSOService.Services.Repositories.Relational.Implementations
                 ResourceId = resourceId
             }
                 );
-            var status = await _db.SaveAndAuditChangesAsync(_currentUser.Id) > 0;
+            var status = await _db.SaveChangesAsync() > 0;
             if (status) return await Get(applicationId);
             return _response.FailedResponse(ReturnType);
         }
@@ -197,7 +197,7 @@ namespace SSOService.Services.Repositories.Relational.Implementations
             applicationResource.IsActive = update ? !applicationResource.IsActive : applicationResource.IsActive;
             applicationResource.IsDeleted = !update ? !applicationResource.IsDeleted : applicationResource.IsDeleted;
             _db.Update(applicationResource);
-            var status = await _db.SaveAndAuditChangesAsync(_currentUser.Id) > 0;
+            var status = await _db.SaveChangesAsync() > 0;
             if (status) return await Get(applicationId);
             return _response.FailedResponse(ReturnType);
         }
@@ -213,25 +213,25 @@ namespace SSOService.Services.Repositories.Relational.Implementations
                 return _response.FailedResponse(ApplicationAuthorizationReturnType, string.Format(ValidationConstants.FieldNotFound, ClassNames.Application));
             if (server == null)
                 return _response.FailedResponse(ApplicationAuthorizationReturnType, string.Format(ValidationConstants.FieldNotFound, ClassNames.Application));
-            var newAuth = new ApplicationAuthentification
+            var newAuth = new ApplicationAuthentication
             {
                 ClientApplicationId = applicationId,
                 ServerApplicationId = serverId
             };
             await _db.AddAsync(newAuth);
-            var status = await _db.SaveAndAuditChangesAsync(_currentUser.Id) > 0;
+            var status = await _db.SaveChangesAsync() > 0;
             if (status) return _response.SuccessResponse(await ToDto(newAuth.Code));
             return _response.FailedResponse(ApplicationAuthorizationReturnType);
         }
         public async Task<Response<GetApplicationAuthentificationDTO>> UpdateApplicationAuthentification(Guid applicationId, Guid serverId, bool update)
         {
 
-            var current = await _db.ApplicationAuthentifications.FirstOrDefaultAsync(x => x.ServerApplicationId == serverId && x.ClientApplicationId == applicationId);
+            var current = await _db.ApplicationAuthentications.FirstOrDefaultAsync(x => x.ServerApplicationId == serverId && x.ClientApplicationId == applicationId);
             if (current == null)
                 return _response.FailedResponse(ApplicationAuthorizationReturnType, string.Format(ValidationConstants.FieldNotFound, ClassNames.Application));
             current.IsActive = update ? !current.IsActive : current.IsActive;
             _db.Update(current);
-            var status = await _db.SaveAndAuditChangesAsync(_currentUser.Id) > 0;
+            var status = await _db.SaveChangesAsync() > 0;
             if (status) return _response.SuccessResponse(await ToDto(current.Code));
             return _response.FailedResponse(ApplicationAuthorizationReturnType);
         }
@@ -248,7 +248,7 @@ namespace SSOService.Services.Repositories.Relational.Implementations
         }
         private async Task<GetApplicationAuthentificationDTO> ToDto(string code)
         {
-            var current = await _db.ApplicationAuthentifications.FirstOrDefaultAsync(x => x.Code == code);
+            var current = await _db.ApplicationAuthentications.FirstOrDefaultAsync(x => x.Code == code);
             var application = await Exists(current.ClientApplicationId);
             var server = await Exists(current.ServerApplicationId);
 

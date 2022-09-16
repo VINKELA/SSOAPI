@@ -1,5 +1,4 @@
-﻿using SSOService.Models.DTOs.Client;
-using System;
+﻿using System;
 using System.Collections.Generic;
 
 namespace SSOService.Models.DTOs.User
@@ -13,7 +12,8 @@ namespace SSOService.Models.DTOs.User
         public string PhoneNumber { get; set; }
         public string UserName { get; set; }
         public string PasswordHash { get; set; }
-        public List<UserClientDTO> Clients { get; set; }
+        public string Client { get; set; }
+        public Guid ClientId { get; set; }
         public bool IsActive { get; set; }
         public byte[] Image { get; set; }
         public List<UserRoleDTO> UserRoles { get; set; }

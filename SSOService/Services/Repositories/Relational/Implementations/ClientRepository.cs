@@ -1,13 +1,11 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using SSOService.Extensions;
-using SSOService.Helpers;
 using SSOService.Models;
 using SSOService.Models.Constants;
 using SSOService.Models.DbContexts;
 using SSOService.Models.Domains;
 using SSOService.Models.DTOs;
 using SSOService.Models.DTOs.Client;
-using SSOService.Models.DTOs.User;
 using SSOService.Models.Enums;
 using SSOService.Services.General.Interfaces;
 using SSOService.Services.Repositories.NonRelational.Interfaces;
@@ -32,8 +30,8 @@ namespace SSOService.Services.Repositories.Relational.Implementations
 
         private readonly IFileRepository _fileRepository;
         private readonly ISubscriptionRepository _subscriptionRepository;
-        private readonly IUserRepository _userRepository;
-        private readonly GetUserDTO _currentUser = RequestContext.GetCurrentUser;
+        private readonly IUserRepository _userReoository;
+
 
 
         public ClientRepository(SSODbContext db, IServiceResponse response, IFileRepository fileRepository,
@@ -43,7 +41,7 @@ namespace SSOService.Services.Repositories.Relational.Implementations
             _response = response;
             _fileRepository = fileRepository;
             _subscriptionRepository = subscriptionRepository;
-            _userRepository = userRepository;
+            _userReoository = userRepository;
 
         }
 
@@ -76,11 +74,10 @@ namespace SSOService.Services.Repositories.Relational.Implementations
                 LogoUrl = filePath
             };
             _db.Clients.Add(newClient);
-            var status = await _db.SaveAndAuditChangesAsync(_currentUser.Id);
+            var status = await _db.SaveChangesAsync();
             if (status > 0)
             {
-                var createdClient = await Get(newClient.Code);
-                await _userRepository.RegisterUserWithClient(_currentUser.Id, createdClient.Id);
+                await _userReoository.AssignClientToUser(newClient.Code);
                 return _response.SuccessResponse(Todto(newClient));
 
             }
@@ -102,10 +99,11 @@ namespace SSOService.Services.Repositories.Relational.Implementations
             else current.IsActive = true;
             var hasChanged = await HasChanged(current);
             if (hasChanged)
-                return _response.FailedResponse(ReturnType, string.Format(ValidationConstants.EntityChangedByAnotherUser, current.Name));
+                return _response.FailedResponse(ReturnType, string.Format(ValidationConstants.EntityChangedByAnotherUser,
+                    current.Name));
             current.ConcurrencyStamp = Guid.NewGuid();
             _db.Clients.Update(current);
-            var result = await _db.SaveAndAuditChangesAsync(_currentUser.Id);
+            var result = await _db.SaveChangesAsync();
             return result > 0 ? _response.SuccessResponse(Todto(current)) :
             _response.FailedResponse(ReturnType);
         }
@@ -155,7 +153,7 @@ namespace SSOService.Services.Repositories.Relational.Implementations
                 ClientId = clientId
             };
             await _db.AddAsync(newAuth);
-            var status = await _db.SaveAndAuditChangesAsync(_currentUser.Id) > 0;
+            var status = await _db.SaveChangesAsync() > 0;
             if (status) return _response.SuccessResponse(await ToDto(newAuth.Code));
             return _response.FailedResponse(ClientSubscriptionReturnType);
         }
@@ -167,7 +165,7 @@ namespace SSOService.Services.Repositories.Relational.Implementations
                 return _response.FailedResponse(ClientSubscriptionReturnType, string.Format(ValidationConstants.FieldNotFound, ClassNames.Client));
             current.IsActive = update ? !current.IsActive : current.IsActive;
             _db.Update(current);
-            var status = await _db.SaveAndAuditChangesAsync(_currentUser.Id) > 0;
+            var status = await _db.SaveChangesAsync() > 0;
             if (status) return _response.SuccessResponse(await ToDto(current.Code));
             return _response.FailedResponse(ClientSubscriptionReturnType);
         }
@@ -257,7 +255,7 @@ namespace SSOService.Services.Repositories.Relational.Implementations
                 return _response.FailedResponse(returnType, string.Format(ValidationConstants.EntityChangedByAnotherUser, client.Name));
             current.ConcurrencyStamp = Guid.NewGuid();
             _db.Clients.Update(current);
-            var status = await _db.SaveAndAuditChangesAsync(_currentUser.Id);
+            var status = await _db.SaveChangesAsync();
             return status > 0 ? _response.SuccessResponse(Todto(current)) :
             _response.FailedResponse(returnType);
         }

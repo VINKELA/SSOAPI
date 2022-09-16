@@ -40,7 +40,7 @@ namespace SSOService.Services.Repositories.Relational.Implementations
                 CreatedBy = _currentUser.Email
             };
             await _db.AddAsync(application);
-            var status = await _db.SaveAndAuditChangesAsync(_currentUser.Id) > 0;
+            var status = await _db.SaveChangesAsync() > 0;
             return status ? _response.SuccessResponse(ToDto(application))
                 : _response.FailedResponse(ReturnType);
         }
@@ -55,7 +55,7 @@ namespace SSOService.Services.Repositories.Relational.Implementations
                 Modified = DateTime.Now
             };
             await _db.AddAsync(currentRole);
-            var status = await _db.SaveAndAuditChangesAsync(_currentUser.Id) > 0;
+            var status = await _db.SaveChangesAsync() > 0;
             return status ? _response.SuccessResponse(ToDto(currentRole))
                 : _response.FailedResponse(ReturnType);
         }
@@ -77,7 +77,7 @@ namespace SSOService.Services.Repositories.Relational.Implementations
                 return _response.FailedResponse(ReturnType, string.Format(ValidationConstants.EntityChangedByAnotherUser, current.Id));
             current.ConcurrencyStamp = Guid.NewGuid();
             _db.Roles.Update(current);
-            var result = await _db.SaveAndAuditChangesAsync(_currentUser.Id);
+            var result = await _db.SaveChangesAsync();
             return result > 0 ? _response.SuccessResponse(ToDto(current)) :
             _response.FailedResponse(ReturnType);
         }
@@ -114,7 +114,7 @@ namespace SSOService.Services.Repositories.Relational.Implementations
                 ClaimValue = roleClaim.ClaimValue
             };
             await _db.AddAsync(newclaim);
-            var status = await _db.SaveAndAuditChangesAsync(_currentUser.Id) > 0;
+            var status = await _db.SaveChangesAsync() > 0;
             if (status) return _response.SuccessResponse(ToDto(role));
             return _response.FailedResponse(ReturnType);
         }
@@ -126,7 +126,7 @@ namespace SSOService.Services.Repositories.Relational.Implementations
                 return _response.FailedResponse(ReturnType, string.Format(ValidationConstants.FieldNotFound, ClassNames.Role));
             current.IsActive = update ? !current.IsActive : current.IsActive;
             _db.Update(current);
-            var status = await _db.SaveAndAuditChangesAsync(_currentUser.Id) > 0;
+            var status = await _db.SaveChangesAsync() > 0;
             if (status) return _response.SuccessResponse(ToDto(await Exists(roleId)));
             return _response.FailedResponse(ReturnType);
         }
@@ -147,7 +147,7 @@ namespace SSOService.Services.Repositories.Relational.Implementations
                 RoleId = roleId
             };
             await _db.AddAsync(newAuth);
-            var status = await _db.SaveAndAuditChangesAsync(_currentUser.Id) > 0;
+            var status = await _db.SaveChangesAsync() > 0;
             if (status) return _response.SuccessResponse(ToDto(role));
             return _response.FailedResponse(ReturnType);
         }
@@ -159,7 +159,7 @@ namespace SSOService.Services.Repositories.Relational.Implementations
                 return _response.FailedResponse(ReturnType, string.Format(ValidationConstants.FieldNotFound, ClassNames.Role));
             current.IsActive = update ? !current.IsActive : current.IsActive;
             _db.Update(current);
-            var status = await _db.SaveAndAuditChangesAsync(_currentUser.Id) > 0;
+            var status = await _db.SaveChangesAsync() > 0;
             if (status) return _response.SuccessResponse(ToDto(await Exists(roleId)));
             return _response.FailedResponse(ReturnType);
         }

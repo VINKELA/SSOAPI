@@ -106,7 +106,7 @@ namespace SSOService.Services.General.Implementation
                 Token = token
             };
             _db.RefreshTokens.Add(newToken);
-            await _db.SaveAndAuditChangesAsync(userId);
+            await _db.SaveChangesAsync();
         }
 
 

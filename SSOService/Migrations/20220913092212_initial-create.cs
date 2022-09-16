@@ -3,7 +3,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 
 namespace SSOService.Migrations
 {
-    public partial class initailMigration : Migration
+    public partial class initialcreate : Migration
     {
         protected override void Up(MigrationBuilder migrationBuilder)
         {
@@ -183,7 +183,7 @@ namespace SSOService.Migrations
                     Name = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     Value = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     CustomParameterType = table.Column<int>(type: "int", nullable: false),
-                    ServiceId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    ApplicationResourceId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     IsActive = table.Column<bool>(type: "bit", nullable: false),
                     IsDeleted = table.Column<bool>(type: "bit", nullable: false),
                     CreatedOn = table.Column<DateTime>(type: "datetime2", nullable: false)
@@ -200,8 +200,7 @@ namespace SSOService.Migrations
                     Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     PermissionType = table.Column<int>(type: "int", nullable: false),
                     Scope = table.Column<int>(type: "int", nullable: false),
-                    Entity = table.Column<int>(type: "int", nullable: false),
-                    ClientId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    ResourceId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     Name = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     IsActive = table.Column<bool>(type: "bit", nullable: false),
                     IsDeleted = table.Column<bool>(type: "bit", nullable: false),
@@ -371,22 +370,6 @@ namespace SSOService.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "UserClients",
-                columns: table => new
-                {
-                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    UserId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    ClientId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    IsActive = table.Column<bool>(type: "bit", nullable: false),
-                    IsDeleted = table.Column<bool>(type: "bit", nullable: false),
-                    CreatedOn = table.Column<DateTime>(type: "datetime2", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_UserClients", x => x.Id);
-                });
-
-            migrationBuilder.CreateTable(
                 name: "UserDevices",
                 columns: table => new
                 {
@@ -472,6 +455,7 @@ namespace SSOService.Migrations
                     UserName = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     AccessFailedCount = table.Column<int>(type: "int", nullable: false),
                     FilePath = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    ClientId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
                     IsActive = table.Column<bool>(type: "bit", nullable: false),
                     IsDeleted = table.Column<bool>(type: "bit", nullable: false),
                     CreatedOn = table.Column<DateTime>(type: "datetime2", nullable: false),
@@ -555,9 +539,6 @@ namespace SSOService.Migrations
 
             migrationBuilder.DropTable(
                 name: "SubscriptionServices");
-
-            migrationBuilder.DropTable(
-                name: "UserClients");
 
             migrationBuilder.DropTable(
                 name: "UserDevices");

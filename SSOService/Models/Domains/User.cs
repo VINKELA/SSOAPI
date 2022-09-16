@@ -18,6 +18,7 @@ namespace SSOService.Models.Domains
         public string UserName { get; set; }
         public int AccessFailedCount { get; set; }
         public string FilePath { get; set; }
+        public Guid? ClientId { get; set; }
 
     }
 }

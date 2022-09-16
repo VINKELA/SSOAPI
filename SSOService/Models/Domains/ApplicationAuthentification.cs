@@ -3,9 +3,9 @@
 namespace SSOService.Models.Domains
 {
     // This is the authentication between communicating applications
-    public class ApplicationAuthentification : EntityTracking
+    public class ApplicationAuthentication : EntityTracking
     {
-        public ApplicationAuthentification()
+        public ApplicationAuthentication()
         {
             ClientSecret = Guid.NewGuid().ToString();
         }

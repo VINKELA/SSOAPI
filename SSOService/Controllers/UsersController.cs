@@ -1,5 +1,4 @@
-﻿using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 using SSOService.Extensions;
 using SSOService.Models;
 using SSOService.Models.Domains;
@@ -11,7 +10,6 @@ using System.Threading.Tasks;
 
 namespace SSOService.Controllers
 {
-    [AuthorizedRequest]
     [Route("api/[controller]")]
     [ApiController]
 
@@ -26,6 +24,7 @@ namespace SSOService.Controllers
 
         // GET: api/Users
         [HttpGet]
+        [AuthorizedRequest]
 
         public async Task<ActionResult<IEnumerable<GetUserDTO>>> Get(string name = null, string email = null,
    string phoneNumber = null, string client = null) => Ok(await _user.Get(name, email, phoneNumber, client));
@@ -35,6 +34,7 @@ namespace SSOService.Controllers
 
         // GET: api/Users/5
         [HttpGet("{id}")]
+        [AuthorizedRequest]
         public async Task<ActionResult<User>> GetUser(Guid id) => Ok(await _user.Get(id));
         // PUT: api/Users/5
         // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
@@ -49,12 +49,12 @@ namespace SSOService.Controllers
         // POST: api/Users
         // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
         [HttpPost]
-        [AllowAnonymous]
         public async Task<ActionResult<Response<GetUserDTO>>> Post([FromForm] CreateUserDTO user)
             => Ok(await _user.CreateAsync(user));
 
         // DELETE: api/Users/5
         [HttpDelete("{id}")]
+        [AuthorizedRequest]
         public async Task<ActionResult<Response<GetUserDTO>>> Delete(Guid id)
             => Ok(await _user.ChangeState(id, false, true));
 

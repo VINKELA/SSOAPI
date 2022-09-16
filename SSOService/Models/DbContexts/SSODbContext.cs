@@ -1,5 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json;
+using SSOService.Helpers;
 using SSOService.Models.Domains;
 using SSOService.Models.DTOs.Audit;
 using System;
@@ -26,12 +27,11 @@ namespace SSOService.Models.DbContexts
         public virtual DbSet<ClientSubscription> ClientSubscriptions { get; set; }
         public virtual DbSet<Resource> Resources { get; set; }
         public virtual DbSet<SubscriptionResource> SubscriptionServices { get; set; }
-        public virtual DbSet<ApplicationAuthentification> ApplicationAuthentifications { get; set; }
+        public virtual DbSet<ApplicationAuthentication> ApplicationAuthentications { get; set; }
         public virtual DbSet<Audit> AuditLogs { get; set; }
         public virtual DbSet<Role> Roles { get; set; }
         public virtual DbSet<RoleClaim> RoleClaims { get; set; }
         public virtual DbSet<RolePermission> RolePermissions { get; set; }
-        public virtual DbSet<UserClient> UserClients { get; set; }
         public virtual DbSet<RefreshToken> RefreshTokens { get; set; }
         public virtual DbSet<UserRole> UserRoles { get; set; }
         public virtual DbSet<ResourceType> ResourceTypes { get; set; }
@@ -39,16 +39,19 @@ namespace SSOService.Models.DbContexts
         public virtual DbSet<ApplicationResource> ApplicationResources { get; set; }
         public virtual DbSet<UserSubscription> UserSubscriptions { get; set; }
 
+        protected override void OnModelCreating(ModelBuilder modelBuilder)
+        {
+            modelBuilder.Entity<Subscription>().Property(p => p.AmountInNaira).HasColumnType("decimal(18,4)");
 
-
-
-
-        public virtual async Task<int> SaveAndAuditChangesAsync(Guid? userId = null)
+        }
+        public virtual async Task<int> SaveChangesAsync()
         {
             int result = 0;
+            var currentUser = RequestContext.GetCurrentUser;
+
             try
             {
-                OnBeforeSaveChanges(userId);
+                OnBeforeSaveChanges(currentUser?.Id);
                 result = await base.SaveChangesAsync();
                 return result;
 

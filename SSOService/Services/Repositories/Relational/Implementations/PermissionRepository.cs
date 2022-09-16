@@ -36,7 +36,7 @@ namespace SSOService.Services.Repositories.Relational.Implementations
                 CreatedBy = _currentUser.Email
             };
             await _db.AddAsync(application);
-            var status = await _db.SaveAndAuditChangesAsync(_currentUser.Id) > 0;
+            var status = await _db.SaveChangesAsync() > 0;
             return status ? _response.SuccessResponse(ToDto(application))
                 : _response.FailedResponse(ReturnType);
         }
@@ -51,7 +51,7 @@ namespace SSOService.Services.Repositories.Relational.Implementations
                 Modified = DateTime.Now
             };
             await _db.AddAsync(currentPermission);
-            var status = await _db.SaveAndAuditChangesAsync(_currentUser.Id) > 0;
+            var status = await _db.SaveChangesAsync() > 0;
             return status ? _response.SuccessResponse(ToDto(currentPermission))
                 : _response.FailedResponse(ReturnType);
         }
@@ -73,7 +73,7 @@ namespace SSOService.Services.Repositories.Relational.Implementations
                 return _response.FailedResponse(ReturnType, string.Format(ValidationConstants.EntityChangedByAnotherUser, current.Id));
             current.ConcurrencyStamp = Guid.NewGuid();
             _db.Permissions.Update(current);
-            var result = await _db.SaveAndAuditChangesAsync(_currentUser.Id);
+            var result = await _db.SaveChangesAsync();
             return result > 0 ? _response.SuccessResponse(ToDto(current)) :
             _response.FailedResponse(ReturnType);
         }
