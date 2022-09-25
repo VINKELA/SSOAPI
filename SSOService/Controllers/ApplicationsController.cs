@@ -16,7 +16,6 @@ namespace SSOService.Controllers
     [AuthorizedRequest]
     public class ApplicationsController : ControllerBase
     {
-
         private readonly IApplicationRepository _applicationRepository;
         public ApplicationsController(IApplicationRepository applicationRepository) =>
             _applicationRepository = applicationRepository;
@@ -55,7 +54,5 @@ namespace SSOService.Controllers
         [HttpPatch("deactivate/{id}")]
         public async Task<ActionResult<Response<GetApplicationDTO>>> Deactivate(Guid id)
             => Ok(await _applicationRepository.ChangeState(id, true));
-
-
     }
 }

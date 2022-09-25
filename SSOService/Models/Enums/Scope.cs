@@ -3,6 +3,7 @@
     public enum Scope
     {
         all,
+        clientResource,
         single
     }
 }

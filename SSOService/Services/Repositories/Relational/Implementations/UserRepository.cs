@@ -1,8 +1,15 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Configuration;
+using SSOService.Services.Interfaces;
 using SSOService.Extensions;
 using SSOService.Helpers;
 using SSOService.Models;
+using SSOService.Models.DTOs.Role;
+using SSOService.Models.DTOs.Service;
+using SSOService.Models.DTOs;
+using SSOService.Models.DTOs.Application;
+using SSOService.Models.DTOs.ServiceType;
 using SSOService.Models.Constants;
 using SSOService.Models.DbContexts;
 using SSOService.Models.Domains;
@@ -39,9 +46,16 @@ namespace SSOService.Services.Repositories.Relational.Implementations
         private readonly ISubscriptionRepository _subscriptionRepository;
         private readonly IRoleRepository _roleRepository;
         private readonly ILogger<User> _logger;
+        private IConfiguration _Configuration;
+        private IClientRepository _client;
+        private IApplicationRepository _application;
+        private IResourceType  _resourceType;
+        private IResourceRepository _resoureRepository;
+
         public UserRepository(IServiceResponse response, SSODbContext db, IFileRepository fileRepository,
-            ILogger<User> logger, IPermissionRepository permissionRepository,
-            ISubscriptionRepository subscriptionRepository, IRoleRepository roleRepository)
+            ILogger<User> logger, IPermissionRepository permissionRepository, IClientRepository clientRepository,
+            ISubscriptionRepository subscriptionRepository, IRoleRepository roleRepository,
+             IApplicationRepository applicationRepository, IResourceType resourceType, IResourceRepository resourceRepository)
         {
             _response = response;
             _db = db;
@@ -50,6 +64,10 @@ namespace SSOService.Services.Repositories.Relational.Implementations
             _subscriptionRepository = subscriptionRepository;
             _roleRepository = roleRepository;
             _logger = logger;
+            _client = clientRepository;
+            _application = applicationRepository;
+            _resourceType = resourceType;
+            _resoureRepository = resourceRepository;
         }
         public async Task<Response<GetUserDTO>> CreateAsync(CreateUserDTO user)
         {
@@ -248,16 +266,14 @@ namespace SSOService.Services.Repositories.Relational.Implementations
         {
             var current = await Exists(id);
             if (current == null)
-                return _response.FailedResponse(ReturnType,
-                    string.Format(ValidationConstants.FieldNotFound, ClassNames.User));
+                return _response.FailedResponse(ReturnType,string.Format(ValidationConstants.FieldNotFound, ClassNames.User));
             return _response.SuccessResponse(ToDto(current));
         }
         public async Task<Response<GetUserDTO>> Get(string emailOrUsername)
         {
             var current = await GetUserByEmailOrUsername(emailOrUsername);
             if (current == null)
-                return _response.FailedResponse(ReturnType,
-                    string.Format(ValidationConstants.FieldNotFound, ClassNames.User));
+                return _response.FailedResponse(ReturnType,string.Format(ValidationConstants.FieldNotFound, ClassNames.User));
             return _response.SuccessResponse(current);
         }
         public async Task<GetUserDTO> GetUserByEmailOrUsername(string emailOrUsername)
@@ -507,6 +523,59 @@ namespace SSOService.Services.Repositories.Relational.Implementations
         {
             var current = await _db.Users.FirstOrDefaultAsync(x => x.Id == id && !x.IsDeleted);
             return current;
+        }
+        public async Task InitializeApplication(){
+           if(!_db.Users.Any()){
+                var details = _Configuration.GetSection("ApplicationDetails");
+                var clientName = details["ClientName"];
+                var contactPerson = details["SuperAdminEmail"];
+                var appName = details["Name"];
+                var appBaseUrl = details["ApplicationBaseUrl"];
+                // create a client
+                var client = new CreateClientDTO() {
+                    Name = clientName,
+                    ContactPersonEmail = contactPerson,
+                    ClientType = ClientType.Unknown
+                };
+                var clientDetails = await _client.Save(client);
+                // create sso  application
+                var application = new CreateApplicationDTO{
+                    Name = appName,
+                    ClientId = clientDetails.Data.Id,
+                    URL= appBaseUrl
+                };
+                var applicationDetails = await _application.Create(application);
+                // create resource type
+                var resourceType = new CreateServiceTypeDTO{
+                    Name = "User Mangement",
+                    ClientId = applicationDetails.Data.Id
+                };
+                var resourceTypeDetails = await _resourceType.Create(resourceType);
+                // create user resource
+                var resource = new CreateResourceDTO
+                {
+                    Name = "Users",
+                    ResourceTypeId = resourceTypeDetails.Data.Id
+                };
+                await _resoureRepository.Create(resource);
+                //create a user role
+                var role = new CreateRoleDTO
+                {
+                    Name = "superadmin",
+                    ClientId = clientDetails.Data.Id
+                };
+                
+                var roleDetails = await _roleRepository.Create(role);
+                //create a user
+                var user = new CreateUserDTO
+                {
+                    FirstName = contactPerson,
+                    LastName = contactPerson,
+                    Email = contactPerson
+                };
+                var userDetails = await CreateAsync(user);
+                await AddRole(roleDetails.Data.Id, userDetails.Data.Id);
+           }
         }
         private async Task<bool> HasChanged(User user)
         {

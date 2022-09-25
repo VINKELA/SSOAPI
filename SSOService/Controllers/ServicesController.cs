@@ -52,8 +52,5 @@ namespace SSOService.Controllers
         [HttpPatch("deactivate/{id}")]
         public async Task<ActionResult<Response<GetResourceDTO>>> Deactivate(Guid id)
             => Ok(await _serviceRepository.ChangeState(id, true));
-
-
-
     }
 }

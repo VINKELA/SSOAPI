@@ -11,6 +11,5 @@ namespace SSOService.Controllers
     [ApiController]
     public class BaseController : ControllerBase
     {
-
     }
 }

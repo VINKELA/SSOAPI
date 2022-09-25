@@ -19,9 +19,7 @@ namespace SSOService.Extensions
                     result += currentCharacter.ToString().ToUpper();
                 else
                     result += currentCharacter.ToString().ToLower();
-                if (spaceCharacters.Contains(currentCharacter))
-                    afterSpace = true;
-                else afterSpace = false;
+                afterSpace = spaceCharacters.Contains(currentCharacter);
             }
             return result;
         }

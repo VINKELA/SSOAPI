@@ -17,8 +17,6 @@ namespace SSOService.Services.Repositories.Relational.Interfaces
         Task<Response<GetUserDTO>> Get(string emailOrUsername);
         Task<GetUserDTO> GetUserByEmailOrUsername(string emailOrUsername);
         GetUserDTO GetLoggedInUser();
-        Task AssignClientToUser(string code);
-
-
+        Task<Response<GetUserDTO>> AddRole(Guid roleId, Guid userId);
     }
 }

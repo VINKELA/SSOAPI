@@ -25,7 +25,5 @@ namespace SSOService.Controllers
         [ProducesResponseType(type: typeof(Response<TokenDTO>), statusCode: 200)]
         public async Task<IActionResult> AppLogin([FromBody] AppLoginDTO app)
     => Ok(await _auth.Login(app));
-
-
     }
 }

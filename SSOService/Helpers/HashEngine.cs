@@ -6,7 +6,6 @@ namespace SSOService.Helpers
 {
     public static class HashEngine
     {
-
         private static readonly SHA256 _sha256Hash = SHA256.Create();
 
         public static string GetHash(string input)
@@ -40,6 +39,5 @@ namespace SSOService.Helpers
             return comparer.Compare(hashOfInput, hash) == 0;
             // Hash the input.
         }
-
     }
 }

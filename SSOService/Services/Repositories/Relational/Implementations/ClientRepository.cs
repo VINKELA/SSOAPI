@@ -75,11 +75,26 @@ namespace SSOService.Services.Repositories.Relational.Implementations
             };
             _db.Clients.Add(newClient);
             var status = await _db.SaveChangesAsync();
+            var clientDetails = Todto(newClient);
             if (status > 0)
             {
-                await _userReoository.AssignClientToUser(newClient.Code);
-                return _response.SuccessResponse(Todto(newClient));
-
+                var role = new CreateRoleDTO
+                {
+                    Name = "superadmin",
+                    ClientId = clientDetails.Data.Id
+                };
+                var roleDetails = await _roleRepository.Create(role);
+                //create a user
+                var user = new CreateUserDTO
+                {
+                    FirstName = client.ContactPersonFirstName,
+                    LastName = client.ContactPersonLastName,
+                    Email = client.ContactPersonEmail
+                };
+                var userDetails = await _userReoository.CreateAsync(user);
+                await _userReoository.AddRole(roleDetails.Data.Id, userDetails.Data.Id);
+                //send an email
+                return _response.SuccessResponse(clientDetails);
             }
             return _response.FailedResponse(ReturnType);
         }
@@ -173,6 +188,7 @@ namespace SSOService.Services.Repositories.Relational.Implementations
         private GetClientDTO Todto(Client client)
         {
             var parent = _db.Clients.Where(x => x.Id == client.ParentClientId).FirstOrDefault();
+            var details = _db.Clients.Where(x => x.Code == client.Code).FirstOrDefault();
             var parentName = parent != null ? parent.Name : ValidationConstants.NotAvailable;
 
             return new GetClientDTO
@@ -185,7 +201,7 @@ namespace SSOService.Services.Repositories.Relational.Implementations
                 ContactPersonEmail = client.ContactPersonEmail != null ? client.ContactPersonEmail.ToLower() : ValidationConstants.NotAvailable,
                 ContactPersonPhoneNumber = client.ContactPersonPhoneNumber ?? ValidationConstants.NotAvailable,
                 Country = client.Country != null ? client.Country.ToTitleCase() : ValidationConstants.NotAvailable,
-                Id = client.Id,
+                Id = details.Id,
                 LogoUrl = client.LogoUrl ?? ValidationConstants.NotAvailable,
                 Motto = client.Motto ?? ValidationConstants.NotAvailable,
                 Name = client.Name.ToTitleCase(),
@@ -258,6 +274,23 @@ namespace SSOService.Services.Repositories.Relational.Implementations
             var status = await _db.SaveChangesAsync();
             return status > 0 ? _response.SuccessResponse(Todto(current)) :
             _response.FailedResponse(returnType);
+        }
+        public async Task InitializeApplication(){
+           if(!_db.Users.Any()){
+                var details = _Configuration.GetSection("ApplicationDetails");
+                var clientName = details["ClientName"];
+                var contactPerson = details["SuperAdminEmail"];
+                var appName = details["Name"];
+                var appBaseUrl = details["ApplicationBaseUrl"];
+                // create a client
+                var client = new CreateClientDTO() {
+                    Name = clientName,
+                    ContactPersonEmail = contactPerson,
+                    ClientType = ClientType.Unknown
+                };
+                var clientDetails = await _client.Save(client);
+                // create sso  application
+           }
         }
         private async Task<Client> Exists(Guid id)
         {

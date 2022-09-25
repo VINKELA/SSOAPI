@@ -141,14 +141,15 @@ namespace SSOService
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
-        public void Configure(IApplicationBuilder app, IWebHostEnvironment env, ILoggerFactory logger)
+        public void Configure(IApplicationBuilder app, 
+        IWebHostEnvironment env, ILoggerFactory logger, IUserRepository _user)
         {
             if (env.IsDevelopment())
             {
                 app.UseDeveloperExceptionPage();
-                app.UseSwagger();
-                app.UseSwaggerUI(c => c.SwaggerEndpoint(SwaggerUrl, APPName));
             }
+            app.UseSwagger();
+            app.UseSwaggerUI(c => c.SwaggerEndpoint(SwaggerUrl, APPName));
             logger.AddStackify();
             app.UseMiddleware<StackifyMiddleware.RequestTracerMiddleware>();
             app.UseHttpsRedirection();

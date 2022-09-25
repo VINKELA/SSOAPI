@@ -53,8 +53,5 @@ namespace SSOService.Controllers
         [HttpPatch("deactivate/{id}")]
         public async Task<ActionResult<Response<GetRoleDTO>>> Deactivate(Guid id)
             => Ok(await _roleRepository.ChangeState(id, true));
-
-
-
     }
 }

@@ -20,8 +20,6 @@ namespace SSOService.Controllers
 
         public ClientsController(IClientRepository client)
             => _client = client;
-
-
         // POST: api/Clients
         // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
         [HttpPost]
@@ -56,14 +54,5 @@ namespace SSOService.Controllers
         [ProducesResponseType(type: typeof(Response<GetClientDTO>), statusCode: 200)]
         public async Task<IActionResult> Update(Guid id, [FromForm] UpdateClientDTO client)
         => Ok(await _client.Update(id, client));
-
-
-
-
-
-
-
-
-
-    }
+        }
 }

@@ -57,7 +57,5 @@ namespace SSOService.Controllers
         [AuthorizedRequest]
         public async Task<ActionResult<Response<GetUserDTO>>> Delete(Guid id)
             => Ok(await _user.ChangeState(id, false, true));
-
-
     }
 }
