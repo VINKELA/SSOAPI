@@ -2,10 +2,10 @@
 
 namespace SSOService.Models.DTOs.ServiceType
 {
-    public class CreateServiceTypeDTO
+    public class CreateResourceTypeDTO
     {
         public string Name { get; set; }
-        public Guid ClientId { get; set; }
+        public Guid ApplicationId { get; set; }
 
     }
 }

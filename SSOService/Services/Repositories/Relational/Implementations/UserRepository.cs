@@ -1,15 +1,8 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Configuration;
-using SSOService.Services.Interfaces;
 using SSOService.Extensions;
 using SSOService.Helpers;
 using SSOService.Models;
-using SSOService.Models.DTOs.Role;
-using SSOService.Models.DTOs.Service;
-using SSOService.Models.DTOs;
-using SSOService.Models.DTOs.Application;
-using SSOService.Models.DTOs.ServiceType;
 using SSOService.Models.Constants;
 using SSOService.Models.DbContexts;
 using SSOService.Models.Domains;
@@ -42,32 +35,18 @@ namespace SSOService.Services.Repositories.Relational.Implementations
         private readonly IServiceResponse _response;
         private readonly IFileRepository _fileRepository;
         private readonly GetUserDTO ReturnType = new();
-        private readonly IPermissionRepository _permissionRepository;
         private readonly ISubscriptionRepository _subscriptionRepository;
         private readonly IRoleRepository _roleRepository;
         private readonly ILogger<User> _logger;
-        private IConfiguration _Configuration;
-        private IClientRepository _client;
-        private IApplicationRepository _application;
-        private IResourceType  _resourceType;
-        private IResourceRepository _resoureRepository;
-
         public UserRepository(IServiceResponse response, SSODbContext db, IFileRepository fileRepository,
-            ILogger<User> logger, IPermissionRepository permissionRepository, IClientRepository clientRepository,
-            ISubscriptionRepository subscriptionRepository, IRoleRepository roleRepository,
-             IApplicationRepository applicationRepository, IResourceType resourceType, IResourceRepository resourceRepository)
+            ILogger<User> logger, ISubscriptionRepository subscriptionRepository, IRoleRepository roleRepository)
         {
             _response = response;
             _db = db;
             _fileRepository = fileRepository;
-            _permissionRepository = permissionRepository;
             _subscriptionRepository = subscriptionRepository;
             _roleRepository = roleRepository;
             _logger = logger;
-            _client = clientRepository;
-            _application = applicationRepository;
-            _resourceType = resourceType;
-            _resoureRepository = resourceRepository;
         }
         public async Task<Response<GetUserDTO>> CreateAsync(CreateUserDTO user)
         {
@@ -90,7 +69,7 @@ namespace SSOService.Services.Repositories.Relational.Implementations
             var email = user.Email.Trim().ToLower();
             if (_db.Users.Any(x => x.Email == email))
                 return _response.FailedResponse(ReturnType,
-                   string.Format(ValidationConstants.EntityAlreadyExist, ClassNames.User, Email, email));
+                   string.Format(ValidationConstants.EntityAlreadyExist, DefaultResources.User, Email, email));
             if (string.IsNullOrEmpty(user.PhoneNumber))
                 return _response.FailedResponse(ReturnType,
                     string.Format(ValidationConstants.EmptyRequiredFieldResponse, PhoneNumber));
@@ -100,7 +79,7 @@ namespace SSOService.Services.Repositories.Relational.Implementations
                     string.Format(ValidationConstants.InvalidFieldFormatResponse, PhoneNumber));
             if (_db.Users.Any(x => x.PhoneNumber == phone))
                 return _response.FailedResponse(ReturnType,
-                   string.Format(ValidationConstants.EntityAlreadyExist, ClassNames.User, PhoneNumber, phone));
+                   string.Format(ValidationConstants.EntityAlreadyExist, DefaultResources.User, PhoneNumber, phone));
             if (string.IsNullOrEmpty(user.Password))
                 return _response.FailedResponse(ReturnType,
                 string.Format(ValidationConstants.EmptyRequiredFieldResponse, Password));
@@ -198,7 +177,7 @@ namespace SSOService.Services.Repositories.Relational.Implementations
             var current = await Exists(id);
             if (current == null)
                 return _response.FailedResponse(ReturnType,
-                    string.Format(ValidationConstants.FieldNotFound, ClassNames.User));
+                    string.Format(ValidationConstants.FieldNotFound, DefaultResources.User));
             if (!string.IsNullOrEmpty(user.PhoneNumber) && !IsPhoneNumberValid(user.PhoneNumber))
                 return _response.FailedResponse(ReturnType,
                     string.Format(ValidationConstants.InvalidFieldFormatResponse, PhoneNumber));
@@ -213,7 +192,7 @@ namespace SSOService.Services.Repositories.Relational.Implementations
                 hasClient = Guid.TryParse(client, out clientId);
                 var clientDetais = _db.Clients.Any(x => x.Id == clientId);
                 if (!clientDetais) return _response.FailedResponse(ReturnType,
-                    string.Format(ValidationConstants.InvalidFieldResponse, user.ClientId, ClassNames.Client));
+                    string.Format(ValidationConstants.InvalidFieldResponse, user.ClientId, DefaultResources.Client));
             }
             string filePath = current.FilePath;
             if (user.File != null)
@@ -244,7 +223,7 @@ namespace SSOService.Services.Repositories.Relational.Implementations
             var current = await Exists(id);
             if (current == null)
                 return _response.FailedResponse(ReturnType,
-                    string.Format(ValidationConstants.FieldNotFound, ClassNames.Client));
+                    string.Format(ValidationConstants.FieldNotFound, DefaultResources.Client));
             if (deactivate) current.IsActive = !deactivate;
             else if (delete)
             {
@@ -266,14 +245,14 @@ namespace SSOService.Services.Repositories.Relational.Implementations
         {
             var current = await Exists(id);
             if (current == null)
-                return _response.FailedResponse(ReturnType,string.Format(ValidationConstants.FieldNotFound, ClassNames.User));
+                return _response.FailedResponse(ReturnType, string.Format(ValidationConstants.FieldNotFound, DefaultResources.User));
             return _response.SuccessResponse(ToDto(current));
         }
         public async Task<Response<GetUserDTO>> Get(string emailOrUsername)
         {
             var current = await GetUserByEmailOrUsername(emailOrUsername);
             if (current == null)
-                return _response.FailedResponse(ReturnType,string.Format(ValidationConstants.FieldNotFound, ClassNames.User));
+                return _response.FailedResponse(ReturnType, string.Format(ValidationConstants.FieldNotFound, DefaultResources.User));
             return _response.SuccessResponse(current);
         }
         public async Task<GetUserDTO> GetUserByEmailOrUsername(string emailOrUsername)
@@ -317,24 +296,31 @@ namespace SSOService.Services.Repositories.Relational.Implementations
             await _db.SaveChangesAsync();
         }
 
-        public async Task<Response<GetUserDTO>> AddPermission(Guid permissionId, Guid userId)
+        public async Task<Response<GetUserDTO>> AddPermission(List<Guid> permissions, Guid userId)
         {
 
-            var permission = await _permissionRepository.Get(permissionId);
+            var permissionsExists = await _db.Permissions.AllAsync(x => permissions.Contains(x.Id));
             var user = await Exists(userId);
 
-            if (permission == null)
+            if (!permissionsExists)
                 return _response.FailedResponse(ReturnType,
-                    string.Format(ValidationConstants.FieldNotFound, ClassNames.Permission));
+                    string.Format(ValidationConstants.FieldNotFound, DefaultResources.Permission));
             if (user == null)
                 return _response.FailedResponse(ReturnType,
-                    string.Format(ValidationConstants.FieldNotFound, ClassNames.User));
-            var newPermission = new UserPermission
+                    string.Format(ValidationConstants.FieldNotFound, DefaultResources.User));
+            var userPermissions = new List<UserPermission>();
+
+            foreach (var permission in permissions)
             {
-                PermissionId = permissionId,
-                UserId = userId
-            };
-            await _db.AddAsync(newPermission);
+                userPermissions.Add(new UserPermission
+                {
+                    PermissionId = permission,
+                    UserId = userId,
+
+                });
+            }
+
+            await _db.AddRangeAsync(userPermissions);
             var status = await _db.SaveChangesAsync() > 0;
             if (status) return _response.SuccessResponse(ToDto(user));
             return _response.FailedResponse(ReturnType);
@@ -345,7 +331,7 @@ namespace SSOService.Services.Repositories.Relational.Implementations
                 .FirstOrDefaultAsync(x => x.PermissionId == permissionId && x.UserId == userId);
             if (current == null)
                 return _response.FailedResponse(ReturnType,
-                    string.Format(ValidationConstants.FieldNotFound, ClassNames.User));
+                    string.Format(ValidationConstants.FieldNotFound, DefaultResources.User));
             current.IsActive = update ? !current.IsActive : current.IsActive;
             _db.Update(current);
             var status = await _db.SaveChangesAsync() > 0;
@@ -360,10 +346,10 @@ namespace SSOService.Services.Repositories.Relational.Implementations
 
             if (subscription == null)
                 return _response.FailedResponse(ReturnType,
-                    string.Format(ValidationConstants.FieldNotFound, ClassNames.Subscription));
+                    string.Format(ValidationConstants.FieldNotFound, DefaultResources.Subscription));
             if (user == null)
                 return _response.FailedResponse(ReturnType,
-                    string.Format(ValidationConstants.FieldNotFound, ClassNames.User));
+                    string.Format(ValidationConstants.FieldNotFound, DefaultResources.User));
             var newAuth = new UserSubscription
             {
                 SubscriptionId = subscriptionId,
@@ -381,7 +367,7 @@ namespace SSOService.Services.Repositories.Relational.Implementations
                 .FirstOrDefaultAsync(x => x.SubscriptionId == subscriptionId && x.UserId == userId);
             if (current == null)
                 return _response.FailedResponse(ReturnType,
-                    string.Format(ValidationConstants.FieldNotFound, ClassNames.User));
+                    string.Format(ValidationConstants.FieldNotFound, DefaultResources.User));
             current.IsActive = update ? !current.IsActive : current.IsActive;
             _db.Update(current);
             var status = await _db.SaveChangesAsync() > 0;
@@ -395,10 +381,10 @@ namespace SSOService.Services.Repositories.Relational.Implementations
 
             if (role == null)
                 return _response.FailedResponse(ReturnType,
-                    string.Format(ValidationConstants.FieldNotFound, ClassNames.Role));
+                    string.Format(ValidationConstants.FieldNotFound, DefaultResources.Role));
             if (user == null)
                 return _response.FailedResponse(ReturnType,
-                    string.Format(ValidationConstants.FieldNotFound, ClassNames.User));
+                    string.Format(ValidationConstants.FieldNotFound, DefaultResources.User));
             var newAuth = new UserRole
             {
                 RoleId = roleId,
@@ -415,7 +401,7 @@ namespace SSOService.Services.Repositories.Relational.Implementations
             var current = await _db.UserRoles.FirstOrDefaultAsync(x => x.RoleId == roleId && x.UserId == userId);
             if (current == null)
                 return _response.FailedResponse(ReturnType,
-                    string.Format(ValidationConstants.FieldNotFound, ClassNames.User));
+                    string.Format(ValidationConstants.FieldNotFound, DefaultResources.User));
             current.IsActive = update ? !current.IsActive : current.IsActive;
             _db.Update(current);
             var status = await _db.SaveChangesAsync() > 0;
@@ -428,7 +414,7 @@ namespace SSOService.Services.Repositories.Relational.Implementations
 
             if (user == null)
                 return _response.FailedResponse(ReturnType,
-                    string.Format(ValidationConstants.FieldNotFound, ClassNames.User));
+                    string.Format(ValidationConstants.FieldNotFound, DefaultResources.User));
             var newDevice = new UserDevice
             {
                 DeviceName = device.DeviceName,
@@ -447,7 +433,7 @@ namespace SSOService.Services.Repositories.Relational.Implementations
 
             if (user == null)
                 return _response.FailedResponse(ReturnType,
-                    string.Format(ValidationConstants.FieldNotFound, ClassNames.User));
+                    string.Format(ValidationConstants.FieldNotFound, DefaultResources.User));
             var newDevice = new UserLogin
             {
                 LoginProvider = login.LoginProvider,
@@ -523,59 +509,6 @@ namespace SSOService.Services.Repositories.Relational.Implementations
         {
             var current = await _db.Users.FirstOrDefaultAsync(x => x.Id == id && !x.IsDeleted);
             return current;
-        }
-        public async Task InitializeApplication(){
-           if(!_db.Users.Any()){
-                var details = _Configuration.GetSection("ApplicationDetails");
-                var clientName = details["ClientName"];
-                var contactPerson = details["SuperAdminEmail"];
-                var appName = details["Name"];
-                var appBaseUrl = details["ApplicationBaseUrl"];
-                // create a client
-                var client = new CreateClientDTO() {
-                    Name = clientName,
-                    ContactPersonEmail = contactPerson,
-                    ClientType = ClientType.Unknown
-                };
-                var clientDetails = await _client.Save(client);
-                // create sso  application
-                var application = new CreateApplicationDTO{
-                    Name = appName,
-                    ClientId = clientDetails.Data.Id,
-                    URL= appBaseUrl
-                };
-                var applicationDetails = await _application.Create(application);
-                // create resource type
-                var resourceType = new CreateServiceTypeDTO{
-                    Name = "User Mangement",
-                    ClientId = applicationDetails.Data.Id
-                };
-                var resourceTypeDetails = await _resourceType.Create(resourceType);
-                // create user resource
-                var resource = new CreateResourceDTO
-                {
-                    Name = "Users",
-                    ResourceTypeId = resourceTypeDetails.Data.Id
-                };
-                await _resoureRepository.Create(resource);
-                //create a user role
-                var role = new CreateRoleDTO
-                {
-                    Name = "superadmin",
-                    ClientId = clientDetails.Data.Id
-                };
-                
-                var roleDetails = await _roleRepository.Create(role);
-                //create a user
-                var user = new CreateUserDTO
-                {
-                    FirstName = contactPerson,
-                    LastName = contactPerson,
-                    Email = contactPerson
-                };
-                var userDetails = await CreateAsync(user);
-                await AddRole(roleDetails.Data.Id, userDetails.Data.Id);
-           }
         }
         private async Task<bool> HasChanged(User user)
         {

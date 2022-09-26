@@ -73,7 +73,7 @@ namespace SSOService.Services.Repositories.Relational.Implementations
             var current = await Exists(id);
 
             if (current == null)
-                return _response.FailedResponse(ReturnType, string.Format(ValidationConstants.FieldNotFound, ClassNames.Application));
+                return _response.FailedResponse(ReturnType, string.Format(ValidationConstants.FieldNotFound, DefaultResources.Application));
             if (deactivate) current.IsActive = !deactivate;
             else if (delete)
             {
@@ -94,14 +94,14 @@ namespace SSOService.Services.Repositories.Relational.Implementations
         {
             var current = await Exists(id);
             if (current == null)
-                return _response.FailedResponse(ReturnType, string.Format(ValidationConstants.FieldNotFound, ClassNames.Application));
+                return _response.FailedResponse(ReturnType, string.Format(ValidationConstants.FieldNotFound, DefaultResources.Application));
             return _response.SuccessResponse(ToDto(current));
         }
         public async Task<Response<GetApplicationDTO>> Get(AppLoginDTO app)
         {
             var current = await _db.ApplicationAuthentications.FirstOrDefaultAsync(x => x.Code == app.ClientCode && x.ClientSecret == app.ClientSecret);
             if (current == null)
-                return _response.FailedResponse(ReturnType, string.Format(ValidationConstants.FieldNotFound, ClassNames.Application));
+                return _response.FailedResponse(ReturnType, string.Format(ValidationConstants.FieldNotFound, DefaultResources.Application));
             return await Get(current.ClientApplicationId);
         }
 
@@ -124,14 +124,14 @@ namespace SSOService.Services.Repositories.Relational.Implementations
 
             var current = await Exists(applicationId);
             if (current == null)
-                return _response.FailedResponse(ReturnType, string.Format(ValidationConstants.FieldNotFound, ClassNames.Application));
+                return _response.FailedResponse(ReturnType, string.Format(ValidationConstants.FieldNotFound, DefaultResources.Application));
             var permission = await _permissionRepository.Get(permissionId);
             if (permission.Data == null)
-                return _response.FailedResponse(ReturnType, string.Format(ValidationConstants.FieldNotFound, ClassNames.Permission));
+                return _response.FailedResponse(ReturnType, string.Format(ValidationConstants.FieldNotFound, DefaultResources.Permission));
             var applicationPermission = await _db.ApplicationPermissions.FirstOrDefaultAsync(x => x.PermissionId == permissionId &&
                                            x.ApplicationId == applicationId);
             if (applicationPermission == null)
-                return _response.FailedResponse(ReturnType, string.Format(ValidationConstants.FieldNotFound, ClassNames.ApplicationPermission));
+                return _response.FailedResponse(ReturnType, string.Format(ValidationConstants.FieldNotFound, DefaultResources.ApplicationPermission));
             applicationPermission.IsActive = update ? !applicationPermission.IsActive : applicationPermission.IsActive;
             applicationPermission.IsDeleted = !update ? !applicationPermission.IsDeleted : applicationPermission.IsDeleted;
             _db.Update(applicationPermission);
@@ -146,10 +146,10 @@ namespace SSOService.Services.Repositories.Relational.Implementations
 
             var application = await Exists(applicationId);
             if (application == null)
-                return _response.FailedResponse(ReturnType, string.Format(ValidationConstants.FieldNotFound, ClassNames.Application));
+                return _response.FailedResponse(ReturnType, string.Format(ValidationConstants.FieldNotFound, DefaultResources.Application));
             var permission = await _permissionRepository.Get(permissionId);
             if (permission.Data == null)
-                return _response.FailedResponse(ReturnType, string.Format(ValidationConstants.FieldNotFound, ClassNames.Application));
+                return _response.FailedResponse(ReturnType, string.Format(ValidationConstants.FieldNotFound, DefaultResources.Application));
             await _db.AddAsync(new ApplicationPermission
             {
                 ApplicationId = applicationId,
@@ -166,10 +166,10 @@ namespace SSOService.Services.Repositories.Relational.Implementations
 
             var application = await Exists(applicationId);
             if (application == null)
-                return _response.FailedResponse(ReturnType, string.Format(ValidationConstants.FieldNotFound, ClassNames.Application));
+                return _response.FailedResponse(ReturnType, string.Format(ValidationConstants.FieldNotFound, DefaultResources.Application));
             var resource = await _resourceRepository.Get(resourceId);
             if (resource.Data == null)
-                return _response.FailedResponse(ReturnType, string.Format(ValidationConstants.FieldNotFound, ClassNames.Resource));
+                return _response.FailedResponse(ReturnType, string.Format(ValidationConstants.FieldNotFound, DefaultResources.Resource));
             await _db.AddAsync(new ApplicationResource
             {
                 ApplicationId = applicationId,
@@ -186,14 +186,14 @@ namespace SSOService.Services.Repositories.Relational.Implementations
 
             var current = await Exists(applicationId);
             if (current == null)
-                return _response.FailedResponse(ReturnType, string.Format(ValidationConstants.FieldNotFound, ClassNames.Application));
+                return _response.FailedResponse(ReturnType, string.Format(ValidationConstants.FieldNotFound, DefaultResources.Application));
             var resource = await _resourceRepository.Get(serverId);
             if (resource.Data == null)
-                return _response.FailedResponse(ReturnType, string.Format(ValidationConstants.FieldNotFound, ClassNames.Resource));
+                return _response.FailedResponse(ReturnType, string.Format(ValidationConstants.FieldNotFound, DefaultResources.Resource));
             var applicationResource = await _db.ApplicationResources.FirstOrDefaultAsync(x => x.ResourceId == serverId &&
                                            x.ApplicationId == applicationId);
             if (applicationResource == null)
-                return _response.FailedResponse(ReturnType, string.Format(ValidationConstants.FieldNotFound, ClassNames.ApplicationResource));
+                return _response.FailedResponse(ReturnType, string.Format(ValidationConstants.FieldNotFound, DefaultResources.ApplicationResource));
             applicationResource.IsActive = update ? !applicationResource.IsActive : applicationResource.IsActive;
             applicationResource.IsDeleted = !update ? !applicationResource.IsDeleted : applicationResource.IsDeleted;
             _db.Update(applicationResource);
@@ -210,9 +210,9 @@ namespace SSOService.Services.Repositories.Relational.Implementations
             var server = await Exists(serverId);
 
             if (application == null)
-                return _response.FailedResponse(ApplicationAuthorizationReturnType, string.Format(ValidationConstants.FieldNotFound, ClassNames.Application));
+                return _response.FailedResponse(ApplicationAuthorizationReturnType, string.Format(ValidationConstants.FieldNotFound, DefaultResources.Application));
             if (server == null)
-                return _response.FailedResponse(ApplicationAuthorizationReturnType, string.Format(ValidationConstants.FieldNotFound, ClassNames.Application));
+                return _response.FailedResponse(ApplicationAuthorizationReturnType, string.Format(ValidationConstants.FieldNotFound, DefaultResources.Application));
             var newAuth = new ApplicationAuthentication
             {
                 ClientApplicationId = applicationId,
@@ -228,7 +228,7 @@ namespace SSOService.Services.Repositories.Relational.Implementations
 
             var current = await _db.ApplicationAuthentications.FirstOrDefaultAsync(x => x.ServerApplicationId == serverId && x.ClientApplicationId == applicationId);
             if (current == null)
-                return _response.FailedResponse(ApplicationAuthorizationReturnType, string.Format(ValidationConstants.FieldNotFound, ClassNames.Application));
+                return _response.FailedResponse(ApplicationAuthorizationReturnType, string.Format(ValidationConstants.FieldNotFound, DefaultResources.Application));
             current.IsActive = update ? !current.IsActive : current.IsActive;
             _db.Update(current);
             var status = await _db.SaveChangesAsync() > 0;

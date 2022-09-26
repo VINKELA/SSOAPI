@@ -30,16 +30,34 @@ namespace SSOService.Services.Repositories.Relational.Implementations
         public async Task<Response<GetPermissionDTO>> Create(CreatePermissionDTO permissionDTO)
         {
 
-            var application = new Permission
+            var permission = new Permission
             {
                 Name = permissionDTO.Name,
-                CreatedBy = _currentUser.Email
+                CreatedBy = _currentUser.Email,
+                Scope = permissionDTO.Scope,
+                PermissionType = permissionDTO.PermissionType,
+                ResourceId = permissionDTO.ResourceId
             };
-            await _db.AddAsync(application);
+            await _db.AddAsync(permission);
             var status = await _db.SaveChangesAsync() > 0;
-            return status ? _response.SuccessResponse(ToDto(application))
+            return status ? _response.SuccessResponse(ToDto(permission))
                 : _response.FailedResponse(ReturnType);
         }
+        public async Task Create(List<CreatePermissionDTO> permissionDTOs)
+        {
+
+            var permissions = permissionDTOs.Select(x => new Permission
+            {
+                Name = x.Name,
+                CreatedBy = _currentUser?.Email,
+                Scope = x.Scope,
+                PermissionType = x.PermissionType,
+                ResourceId = x.ResourceId
+            });
+            await _db.AddRangeAsync(permissions);
+            var status = await _db.SaveChangesAsync();
+        }
+
         public async Task<Response<GetPermissionDTO>> Update(Guid id, UpdatePermissionDTO permissionDTO)
         {
 
@@ -60,7 +78,7 @@ namespace SSOService.Services.Repositories.Relational.Implementations
             var current = await Exists(id);
 
             if (current == null)
-                return _response.FailedResponse(ReturnType, string.Format(ValidationConstants.FieldNotFound, ClassNames.Permission));
+                return _response.FailedResponse(ReturnType, string.Format(ValidationConstants.FieldNotFound, DefaultResources.Permission));
             if (deactivate) current.IsActive = !deactivate;
             else if (delete)
             {
@@ -81,7 +99,7 @@ namespace SSOService.Services.Repositories.Relational.Implementations
         {
             var current = await Exists(id);
             if (current == null)
-                return _response.FailedResponse(ReturnType, string.Format(ValidationConstants.FieldNotFound, ClassNames.User));
+                return _response.FailedResponse(ReturnType, string.Format(ValidationConstants.FieldNotFound, DefaultResources.User));
             return _response.SuccessResponse(ToDto(current));
         }
         public async Task<Response<IEnumerable<GetPermissionDTO>>> Get(string name)

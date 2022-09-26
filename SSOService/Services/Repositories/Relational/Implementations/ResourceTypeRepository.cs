@@ -19,7 +19,7 @@ namespace SSOService.Services.Repositories.Relational.Implementations
     {
         private readonly SSODbContext _db;
         private readonly IServiceResponse _response;
-        private readonly GetServiceTypeDTO ReturnType = new();
+        private readonly GetResourceTypeDTO ReturnType = new();
         private readonly GetUserDTO _currentUser = RequestContext.GetCurrentUser;
 
         public ResourceTypeRepository(SSODbContext db, IServiceResponse serviceResponse)
@@ -27,13 +27,13 @@ namespace SSOService.Services.Repositories.Relational.Implementations
             _db = db;
             _response = serviceResponse;
         }
-        public async Task<Response<GetServiceTypeDTO>> Create(CreateServiceTypeDTO serviceTypeDTO)
+        public async Task<Response<GetResourceTypeDTO>> Create(CreateResourceTypeDTO serviceTypeDTO)
         {
 
             var application = new ResourceType
             {
                 Name = serviceTypeDTO.Name,
-                ClientId = serviceTypeDTO.ClientId,
+                ApplicationId = serviceTypeDTO.ApplicationId,
                 CreatedBy = _currentUser.Email
             };
             await _db.AddAsync(application);
@@ -41,7 +41,7 @@ namespace SSOService.Services.Repositories.Relational.Implementations
             return status ? _response.SuccessResponse(ToDto(application))
                 : _response.FailedResponse(ReturnType);
         }
-        public async Task<Response<GetServiceTypeDTO>> Update(Guid id, UpdateServiceTypeDTO serviceTypeDTO)
+        public async Task<Response<GetResourceTypeDTO>> Update(Guid id, UpdateResourceTypeDTO serviceTypeDTO)
         {
 
             var currentServiceType = _db.ResourceTypes.FirstOrDefault(x => x.Id == id);
@@ -56,12 +56,12 @@ namespace SSOService.Services.Repositories.Relational.Implementations
             return status ? _response.SuccessResponse(ToDto(currentServiceType))
                 : _response.FailedResponse(ReturnType);
         }
-        public async Task<Response<GetServiceTypeDTO>> ChangeState(Guid id, bool deactivate = false, bool delete = false)
+        public async Task<Response<GetResourceTypeDTO>> ChangeState(Guid id, bool deactivate = false, bool delete = false)
         {
             var current = await Exists(id);
 
             if (current == null)
-                return _response.FailedResponse(ReturnType, string.Format(ValidationConstants.FieldNotFound, ClassNames.Resource));
+                return _response.FailedResponse(ReturnType, string.Format(ValidationConstants.FieldNotFound, DefaultResources.Resource));
             if (deactivate) current.IsActive = !deactivate;
             else if (delete)
             {
@@ -78,14 +78,14 @@ namespace SSOService.Services.Repositories.Relational.Implementations
             return result > 0 ? _response.SuccessResponse(ToDto(current)) :
             _response.FailedResponse(ReturnType);
         }
-        public async Task<Response<GetServiceTypeDTO>> Get(Guid id)
+        public async Task<Response<GetResourceTypeDTO>> Get(Guid id)
         {
             var current = await Exists(id);
             if (current == null)
-                return _response.FailedResponse(ReturnType, string.Format(ValidationConstants.FieldNotFound, ClassNames.ResourceType));
+                return _response.FailedResponse(ReturnType, string.Format(ValidationConstants.FieldNotFound, DefaultResources.ResourceType));
             return _response.SuccessResponse(ToDto(current));
         }
-        public async Task<Response<IEnumerable<GetServiceTypeDTO>>> Get(string name)
+        public async Task<Response<IEnumerable<GetResourceTypeDTO>>> Get(string name)
         {
 
             var list = await _db.ResourceTypes.Where(x => !x.IsDeleted).ToListAsync();
@@ -97,11 +97,11 @@ namespace SSOService.Services.Repositories.Relational.Implementations
             return _response.SuccessResponse(list.Select(x => ToDto(x)));
         }
 
-        private static GetServiceTypeDTO ToDto(ResourceType serviceType)
+        private static GetResourceTypeDTO ToDto(ResourceType serviceType)
         {
-            return new GetServiceTypeDTO
+            return new GetResourceTypeDTO
             {
-                ClientId = serviceType.ClientId,
+                ApplicationId = serviceType.ApplicationId,
                 Id = serviceType.Id,
                 Name = serviceType.Name
             };

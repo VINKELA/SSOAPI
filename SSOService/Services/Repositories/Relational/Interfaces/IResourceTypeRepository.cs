@@ -8,11 +8,11 @@ namespace SSOService.Services.Interfaces
 {
     public interface IResourceType
     {
-        Task<Response<IEnumerable<GetServiceTypeDTO>>> Get(string name);
-        Task<Response<GetServiceTypeDTO>> Get(Guid id);
-        Task<Response<GetServiceTypeDTO>> ChangeState(Guid id, bool deactivate = false, bool delete = false);
-        Task<Response<GetServiceTypeDTO>> Update(Guid id, UpdateServiceTypeDTO serviceTypeDTO);
-        Task<Response<GetServiceTypeDTO>> Create(CreateServiceTypeDTO serviceTypeDTO);
+        Task<Response<IEnumerable<GetResourceTypeDTO>>> Get(string name);
+        Task<Response<GetResourceTypeDTO>> Get(Guid id);
+        Task<Response<GetResourceTypeDTO>> ChangeState(Guid id, bool deactivate = false, bool delete = false);
+        Task<Response<GetResourceTypeDTO>> Update(Guid id, UpdateResourceTypeDTO serviceTypeDTO);
+        Task<Response<GetResourceTypeDTO>> Create(CreateResourceTypeDTO serviceTypeDTO);
 
     }
 }

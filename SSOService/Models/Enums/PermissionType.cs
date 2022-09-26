@@ -2,6 +2,7 @@
 {
     public enum PermissionType
     {
+        All,
         CanRead,
         CanEdit,
         CanDelete,

@@ -141,8 +141,8 @@ namespace SSOService
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
-        public void Configure(IApplicationBuilder app, 
-        IWebHostEnvironment env, ILoggerFactory logger, IUserRepository _user)
+        public void Configure(IApplicationBuilder app,
+        IWebHostEnvironment env, ILoggerFactory logger, IClientRepository clientRepository)
         {
             if (env.IsDevelopment())
             {
@@ -161,6 +161,7 @@ namespace SSOService
             {
                 endpoints.MapControllers();
             });
+            clientRepository.InitializeApplication();
         }
     }
 }

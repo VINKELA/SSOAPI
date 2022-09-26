@@ -13,6 +13,8 @@ namespace SSOService.Services.Repositories.Relational.Interfaces
         Task<Response<GetPermissionDTO>> ChangeState(Guid id, bool deactivate = false, bool delete = false);
         Task<Response<GetPermissionDTO>> Update(Guid id, UpdatePermissionDTO permissionDTO);
         Task<Response<GetPermissionDTO>> Create(CreatePermissionDTO permissionDTO);
+        Task Create(List<CreatePermissionDTO> permissionDTOs);
+
 
     }
 }

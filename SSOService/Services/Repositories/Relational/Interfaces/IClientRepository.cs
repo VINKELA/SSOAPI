@@ -14,6 +14,8 @@ namespace SSOService.Services.Repositories.Relational.Interfaces
         Task<Response<GetClientDTO>> ChangeState(Guid id, bool deactivate = false, bool delete = false);
         Task<Response<GetClientDTO>> Get(Guid id);
         Task<Response<List<GetClientDTO>>> Get(string name, string contactPersonEmail, ClientType? clientType);
+        Task InitializeApplication();
+
 
     }
 }

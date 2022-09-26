@@ -21,36 +21,36 @@ namespace SSOService.Controllers
 
         // GET: api/ServiceTypes
         [HttpGet]
-        public async Task<ActionResult<Response<IEnumerable<GetServiceTypeDTO>>>> GetServiceTypes(string name = null)
+        public async Task<ActionResult<Response<IEnumerable<GetResourceTypeDTO>>>> GetServiceTypes(string name = null)
             => Ok(await _serviceTypeRepository.Get(name));
 
         // GET: api/ServiceTypes/5
         [HttpGet("{id}")]
-        public async Task<ActionResult<Response<GetServiceTypeDTO>>> GetServiceType(Guid id)
+        public async Task<ActionResult<Response<GetResourceTypeDTO>>> GetServiceType(Guid id)
             => Ok(await _serviceTypeRepository.Get(id));
 
         // PUT: api/ServiceTypes/5
         // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
         [HttpPut("{id}")]
-        public async Task<ActionResult<Response<GetServiceTypeDTO>>> PutServiceType(Guid id, UpdateServiceTypeDTO serviceType)
+        public async Task<ActionResult<Response<GetResourceTypeDTO>>> PutServiceType(Guid id, UpdateResourceTypeDTO serviceType)
             => Ok(await _serviceTypeRepository.Update(id, serviceType));
 
         // POST: api/ServiceTypes
         // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
         [HttpPost]
-        public async Task<ActionResult<Response<GetServiceTypeDTO>>> PostServiceType(CreateServiceTypeDTO serviceType)
+        public async Task<ActionResult<Response<GetResourceTypeDTO>>> PostServiceType(CreateResourceTypeDTO serviceType)
             => Ok(await _serviceTypeRepository.Create(serviceType));
 
         // DELETE: api/ServiceTypes/5
         [HttpDelete("{id}")]
-        public async Task<ActionResult<Response<GetServiceTypeDTO>>> DeleteServiceType(Guid id)
+        public async Task<ActionResult<Response<GetResourceTypeDTO>>> DeleteServiceType(Guid id)
             => Ok(await _serviceTypeRepository.ChangeState(id, false, true));
         [HttpPatch("activate/{id}")]
-        public async Task<ActionResult<Response<GetServiceTypeDTO>>> Activate(Guid id)
+        public async Task<ActionResult<Response<GetResourceTypeDTO>>> Activate(Guid id)
             => Ok(await _serviceTypeRepository.ChangeState(id));
 
         [HttpPatch("deactivate/{id}")]
-        public async Task<ActionResult<Response<GetServiceTypeDTO>>> Deactivate(Guid id)
+        public async Task<ActionResult<Response<GetResourceTypeDTO>>> Deactivate(Guid id)
             => Ok(await _serviceTypeRepository.ChangeState(id, true));
     }
 }

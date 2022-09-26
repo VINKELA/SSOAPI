@@ -33,14 +33,28 @@ namespace SSOService.Services.Repositories.Relational.Implementations
             var application = new Resource
             {
                 Name = serviceDTO.Name,
-                ApplicationId = serviceDTO.ClientId,
-                CreatedBy = _currentUser.Email
+                ApplicationId = serviceDTO.ResourceTypeId,
+                CreatedBy = _currentUser?.Email
             };
             await _db.AddAsync(application);
             var status = await _db.SaveChangesAsync() > 0;
             return status ? _response.SuccessResponse(ToDto(application))
                 : _response.FailedResponse(ReturnType);
         }
+        public async Task<Response<IEnumerable<GetResourceDTO>>> Create(List<CreateResourceDTO> resourceDTO)
+        {
+
+            var list = resourceDTO.Select(x => new Resource
+            {
+                Name = x.Name,
+                ApplicationId = x.ResourceTypeId,
+                CreatedBy = _currentUser?.Email
+            });
+            await _db.AddRangeAsync(list);
+            await _db.SaveChangesAsync();
+            return await Get(null);
+        }
+
         public async Task<Response<GetResourceDTO>> Update(Guid id, UpdateResourceDTO serviceDTO)
         {
 
@@ -61,7 +75,7 @@ namespace SSOService.Services.Repositories.Relational.Implementations
             var current = await Exists(id);
 
             if (current == null)
-                return _response.FailedResponse(ReturnType, string.Format(ValidationConstants.FieldNotFound, ClassNames.Resource));
+                return _response.FailedResponse(ReturnType, string.Format(ValidationConstants.FieldNotFound, DefaultResources.Resource));
             if (deactivate) current.IsActive = !deactivate;
             else if (delete)
             {
@@ -82,7 +96,7 @@ namespace SSOService.Services.Repositories.Relational.Implementations
         {
             var current = await Exists(id);
             if (current == null)
-                return _response.FailedResponse(ReturnType, string.Format(ValidationConstants.FieldNotFound, ClassNames.User));
+                return _response.FailedResponse(ReturnType, string.Format(ValidationConstants.FieldNotFound, DefaultResources.User));
             return _response.SuccessResponse(ToDto(current));
         }
         public async Task<Response<IEnumerable<GetResourceDTO>>> Get(string name)

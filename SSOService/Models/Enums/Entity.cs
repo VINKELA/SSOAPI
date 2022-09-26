@@ -2,13 +2,13 @@
 {
     public enum Entity
     {
-        Service,
+        Resource,
         Subscription,
         User,
         Application,
         Permission,
         Role,
         Client,
-        ServiceType
+        ResourceType
     }
 }

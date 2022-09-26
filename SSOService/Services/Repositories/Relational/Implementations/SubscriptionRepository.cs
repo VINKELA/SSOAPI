@@ -64,7 +64,7 @@ namespace SSOService.Subscriptions.Repositories.Relational.Implementations
             var current = await Exists(id);
 
             if (current == null)
-                return _response.FailedResponse(ReturnType, string.Format(ValidationConstants.FieldNotFound, ClassNames.Subscription));
+                return _response.FailedResponse(ReturnType, string.Format(ValidationConstants.FieldNotFound, DefaultResources.Subscription));
             if (deactivate) current.IsActive = !deactivate;
             else if (delete)
             {
@@ -85,7 +85,7 @@ namespace SSOService.Subscriptions.Repositories.Relational.Implementations
         {
             var current = await Exists(id);
             if (current == null)
-                return _response.FailedResponse(ReturnType, string.Format(ValidationConstants.FieldNotFound, ClassNames.User));
+                return _response.FailedResponse(ReturnType, string.Format(ValidationConstants.FieldNotFound, DefaultResources.User));
             return _response.SuccessResponse(ToDto(current));
         }
         public async Task<GetSubscriptionDTO> GetSubscriptionById(Guid id)
@@ -114,9 +114,9 @@ namespace SSOService.Subscriptions.Repositories.Relational.Implementations
             var subscription = await Exists(subcriptionId);
 
             if (service == null)
-                return _response.FailedResponse(ReturnType, string.Format(ValidationConstants.FieldNotFound, ClassNames.Resource));
+                return _response.FailedResponse(ReturnType, string.Format(ValidationConstants.FieldNotFound, DefaultResources.Resource));
             if (subscription == null)
-                return _response.FailedResponse(ReturnType, string.Format(ValidationConstants.FieldNotFound, ClassNames.Subscription));
+                return _response.FailedResponse(ReturnType, string.Format(ValidationConstants.FieldNotFound, DefaultResources.Subscription));
             var newAuth = new SubscriptionResource
             {
                 ResourceId = serviceId,
@@ -132,7 +132,7 @@ namespace SSOService.Subscriptions.Repositories.Relational.Implementations
 
             var current = await _db.SubscriptionServices.FirstOrDefaultAsync(x => x.ResourceId == serviceId && x.SubscriptionId == subcriptionId);
             if (current == null)
-                return _response.FailedResponse(ReturnType, string.Format(ValidationConstants.FieldNotFound, ClassNames.Subscription));
+                return _response.FailedResponse(ReturnType, string.Format(ValidationConstants.FieldNotFound, DefaultResources.Subscription));
             current.IsActive = update ? !current.IsActive : current.IsActive;
             _db.Update(current);
             var status = await _db.SaveChangesAsync() > 0;

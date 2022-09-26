@@ -13,5 +13,7 @@ namespace SSOService.Services.Repositories.Relational.Interfaces
         Task<Response<GetResourceDTO>> ChangeState(Guid id, bool deactivate = false, bool delete = false);
         Task<Response<GetResourceDTO>> Update(Guid id, UpdateResourceDTO serviceDTO);
         Task<Response<GetResourceDTO>> Create(CreateResourceDTO serviceDTO);
+        Task<Response<IEnumerable<GetResourceDTO>>> Create(List<CreateResourceDTO> resourceDTO);
+
     }
 }

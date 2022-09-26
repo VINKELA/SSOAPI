@@ -64,7 +64,7 @@ namespace SSOService.Services.Repositories.Relational.Implementations
             var current = await Exists(id);
 
             if (current == null)
-                return _response.FailedResponse(ReturnType, string.Format(ValidationConstants.FieldNotFound, ClassNames.Role));
+                return _response.FailedResponse(ReturnType, string.Format(ValidationConstants.FieldNotFound, DefaultResources.Role));
             if (deactivate) current.IsActive = !deactivate;
             else if (delete)
             {
@@ -85,7 +85,7 @@ namespace SSOService.Services.Repositories.Relational.Implementations
         {
             var current = await Exists(id);
             if (current == null)
-                return _response.FailedResponse(ReturnType, string.Format(ValidationConstants.FieldNotFound, ClassNames.User));
+                return _response.FailedResponse(ReturnType, string.Format(ValidationConstants.FieldNotFound, DefaultResources.User));
             return _response.SuccessResponse(ToDto(current));
         }
         public async Task<Response<IEnumerable<GetRoleDTO>>> Get(string name)
@@ -106,7 +106,7 @@ namespace SSOService.Services.Repositories.Relational.Implementations
             var role = await Exists(roleClaim.RoleId);
 
             if (role == null)
-                return _response.FailedResponse(ReturnType, string.Format(ValidationConstants.FieldNotFound, ClassNames.RoleClaim));
+                return _response.FailedResponse(ReturnType, string.Format(ValidationConstants.FieldNotFound, DefaultResources.RoleClaim));
             var newclaim = new RoleClaim
             {
                 ClaimType = roleClaim.ClaimType,
@@ -123,7 +123,7 @@ namespace SSOService.Services.Repositories.Relational.Implementations
 
             var current = await _db.RoleClaims.FirstOrDefaultAsync(x => x.Id == claimId && x.RoleId == roleId);
             if (current == null)
-                return _response.FailedResponse(ReturnType, string.Format(ValidationConstants.FieldNotFound, ClassNames.Role));
+                return _response.FailedResponse(ReturnType, string.Format(ValidationConstants.FieldNotFound, DefaultResources.Role));
             current.IsActive = update ? !current.IsActive : current.IsActive;
             _db.Update(current);
             var status = await _db.SaveChangesAsync() > 0;
@@ -138,9 +138,9 @@ namespace SSOService.Services.Repositories.Relational.Implementations
             var role = await Exists(roleId);
 
             if (!permission.Status)
-                return _response.FailedResponse(ReturnType, string.Format(ValidationConstants.FieldNotFound, ClassNames.Permission));
+                return _response.FailedResponse(ReturnType, string.Format(ValidationConstants.FieldNotFound, DefaultResources.Permission));
             if (role == null)
-                return _response.FailedResponse(ReturnType, string.Format(ValidationConstants.FieldNotFound, ClassNames.Role));
+                return _response.FailedResponse(ReturnType, string.Format(ValidationConstants.FieldNotFound, DefaultResources.Role));
             var newAuth = new RolePermission
             {
                 PermissionId = permissionId,
@@ -156,7 +156,7 @@ namespace SSOService.Services.Repositories.Relational.Implementations
 
             var current = await _db.RolePermissions.FirstOrDefaultAsync(x => x.PermissionId == permissionId && x.RoleId == roleId);
             if (current == null)
-                return _response.FailedResponse(ReturnType, string.Format(ValidationConstants.FieldNotFound, ClassNames.Role));
+                return _response.FailedResponse(ReturnType, string.Format(ValidationConstants.FieldNotFound, DefaultResources.Role));
             current.IsActive = update ? !current.IsActive : current.IsActive;
             _db.Update(current);
             var status = await _db.SaveChangesAsync() > 0;
