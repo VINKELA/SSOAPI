@@ -108,7 +108,6 @@ namespace SSOService.Services.Repositories.Relational.Implementations
             returnType.AddRange(list.Select(x => Todto(x)));
             return _response.SuccessResponse(returnType);
         }
-
         public async Task<Response<GetClientDTO>> Get(Guid id)
         {
             var current = await Exists(id);
@@ -156,7 +155,6 @@ namespace SSOService.Services.Repositories.Relational.Implementations
             if (status) return _response.SuccessResponse(await ToDto(current.Code));
             return _response.FailedResponse(ClientSubscriptionReturnType);
         }
-
         public async Task InitializeApplication()
         {
             if (!_db.Users.Any())
@@ -210,7 +208,6 @@ namespace SSOService.Services.Repositories.Relational.Implementations
                 await CreateAdminUser(client);
             }
         }
-
         public async Task<Response<GetClientDTO>> Update(Guid id, UpdateClientDTO client)
         {
 
