@@ -34,9 +34,8 @@ namespace SSOService.Services.Repositories.Relational.Implementations
         private const string Type = "Client Type";
         private readonly SSODbContext _db;
         private readonly IServiceResponse _response;
-        private readonly GetClientDTO ReturnType = new();
+        private readonly GetClientDTO ReturnType = null;
         private readonly GetClientSubscription ClientSubscriptionReturnType = new();
-
         private readonly IFileRepository _fileRepository;
         private readonly ISubscriptionRepository _subscriptionRepository;
         private readonly IUserRepository _userReoository;
@@ -45,11 +44,8 @@ namespace SSOService.Services.Repositories.Relational.Implementations
         private readonly IApplicationRepository _applicationRepository;
         private readonly IResourceType _resourceType;
         private readonly IResourceRepository _resourceRepository;
-
-
-
         public ClientRepository(SSODbContext db, IServiceResponse response, IFileRepository fileRepository, IApplicationRepository applicationRepository,
-            IResourceType resourceType, IConfiguration configuration,ISubscriptionRepository subscriptionRepository, IUserRepository userRepository,
+            IResourceType resourceType, IConfiguration configuration, ISubscriptionRepository subscriptionRepository, IUserRepository userRepository,
             IRoleRepository roleRepository, IResourceRepository resourceRepository)
         {
             _db = db;
@@ -64,129 +60,17 @@ namespace SSOService.Services.Repositories.Relational.Implementations
             _configuration = configuration;
 
         }
-        private async Task<GetClientDTO> CreateClient(CreateClientDTO client)
-        {
-
-            if (string.IsNullOrEmpty(client.Name))
-                return ReturnType;
-            if (string.IsNullOrEmpty(client.ContactPersonEmail))
-                return ReturnType;
-            if (!client.ContactPersonEmail.IsValidEmailFormat())
-                return ReturnType;
-            if (client.ClientType == ClientType.Unknown || !Enum.GetValues<ClientType>().Contains(client.ClientType))
-                return ReturnType;
-            string filePath = null;
-            if (client.Logo != null)
-            {
-                filePath = await _fileRepository.Save(client.Logo, client.Name, FileType.ClientLogo);
-            }
-
-            var newClient = new Client()
-            {
-                ClientType = client.ClientType,
-                ContactPersonEmail = client.ContactPersonEmail.Trim().ToUpper(),
-                Name = client.Name.Trim().ToUpper(),
-                LogoUrl = filePath
-            };
-            _db.Clients.Add(newClient);
-            var status = await _db.SaveChangesAsync() > 0;
-            return status ? Todto(newClient) : ReturnType;
-        }
-
-        public async Task CreateAdminUser(CreateClientDTO client)
-        {
-            var clientDetails = await _db.Clients.FirstOrDefaultAsync(x => x.ContactPersonEmail == client.ContactPersonEmail);
-            var role = new CreateRoleDTO
-            {
-                Name = "superadmin",
-                ClientId = clientDetails.Id
-            };
-            var appName = "";
-            var roleDetails = await _roleRepository.Create(role);
-            var sso = await _db.Applications.FirstOrDefaultAsync(x => x.Name == appName);
-            var resourceType = await _db.ResourceTypes.FirstOrDefaultAsync(x => x.ApplicationId == sso.Id);
-            var resources = await _db.Resources.Where(x => x.ResourceTypeId == resourceType.Id).ToListAsync();
-            var resourceIds = resources.Select(x => x.Id);
-            var permissions = _db.Permissions.Where(x => resourceIds.Contains(x.ResourceId));
-            //create a user
-            var user = new CreateUserDTO
-            {
-                FirstName = client.ContactPersonFirstName,
-                LastName = client.ContactPersonLastName,
-                Email = client.ContactPersonEmail
-            };
-            var userDetails = await _userReoository.CreateAsync(user);
-            await _userReoository.AddRole(roleDetails.Data.Id, userDetails.Data.Id);
-            var permissionsIds = permissions.Select(x => x.Id).ToList();
-            await _userReoository.AddPermission(permissionsIds, userDetails.Data.Id);
-            await _db.SaveChangesAsync();
-            //send an email
-        }
-
         public async Task<Response<GetClientDTO>> Save(CreateClientDTO client)
         {
 
-            if (string.IsNullOrEmpty(client.Name))
-                return _response.FailedResponse(ReturnType,
-                string.Format(ValidationConstants.InvalidFieldFormatResponse, Name));
-            if (string.IsNullOrEmpty(client.ContactPersonEmail))
-                return _response.FailedResponse(ReturnType,
-                string.Format(ValidationConstants.InvalidFieldFormatResponse, Email));
-            if (!client.ContactPersonEmail.IsValidEmailFormat())
-                return _response.FailedResponse(ReturnType,
-                    string.Format(ValidationConstants.InvalidFieldFormatResponse, Email));
-            if (client.ClientType == ClientType.Unknown || !Enum.GetValues<ClientType>().Contains(client.ClientType))
-                return _response.FailedResponse(ReturnType,
-                    string.Format(ValidationConstants.InvalidFieldResponse, client.ClientType, Type));
-            string filePath = null;
-            if (client.Logo != null)
-            {
-                filePath = await _fileRepository.Save(client.Logo, client.Name, FileType.ClientLogo);
-            }
+            var operation = await CreateClient(client);
+            if (operation.Status)
 
-            var newClient = new Client()
-            {
-                ClientType = client.ClientType,
-                ContactPersonEmail = client.ContactPersonEmail.Trim().ToUpper(),
-                Name = client.Name.Trim().ToUpper(),
-                LogoUrl = filePath
-            };
-            _db.Clients.Add(newClient);
-            var status = await _db.SaveChangesAsync();
-            var clientDetails = Todto(newClient);
-            if (status > 0)
-            {
-                var role = new CreateRoleDTO
-                {
-                    Name = "superadmin",
-                    ClientId = clientDetails.Id
-                };
-                var appName = "";
-                var roleDetails = await _roleRepository.Create(role);
-                var sso = await _db.Applications.FirstOrDefaultAsync(x => x.Name == appName);
-                var resourceType = await _db.ResourceTypes.FirstOrDefaultAsync(x => x.ApplicationId == sso.Id);
-                var resources = await _db.Resources.Where(x => x.ResourceTypeId == resourceType.Id).ToListAsync();
-                var resourceIds = resources.Select(x => x.Id);
-                var permissions = _db.Permissions.Where(x => resourceIds.Contains(x.ResourceId));
-                //create a user
-                var user = new CreateUserDTO
-                {
-                    FirstName = client.ContactPersonFirstName,
-                    LastName = client.ContactPersonLastName,
-                    Email = client.ContactPersonEmail
-                };
-                var userDetails = await _userReoository.CreateAsync(user);
-                await _userReoository.AddRole(roleDetails.Data.Id, userDetails.Data.Id);
-                var permissionsIds = permissions.Select(x => x.Id).ToList();
-                await _userReoository.AddPermission(permissionsIds, userDetails.Data.Id);
-                await _db.SaveChangesAsync();
+                await CreateAdminUser(client);
 
-                //send an email
-                return _response.SuccessResponse(clientDetails);
-            }
-            return _response.FailedResponse(ReturnType);
+            return operation;
+
         }
-
         public async Task<Response<GetClientDTO>> ChangeState(Guid id, bool deactivate = false, bool delete = false)
         {
 
@@ -273,47 +157,58 @@ namespace SSOService.Services.Repositories.Relational.Implementations
             return _response.FailedResponse(ClientSubscriptionReturnType);
         }
 
-        private GetClientDTO Todto(Client client)
+        public async Task InitializeApplication()
         {
-            var parent = _db.Clients.Where(x => x.Id == client.ParentClientId).FirstOrDefault();
-            var details = _db.Clients.Where(x => x.Code == client.Code).FirstOrDefault();
-            var parentName = parent != null ? parent.Name : ValidationConstants.NotAvailable;
-
-            return new GetClientDTO
+            if (!_db.Users.Any())
             {
-                Address = client.Address == null ? ValidationConstants.NotAvailable : client.Address.ToTitleCase(),
-                ClientType = client.ClientType,
-                ClientTypeName = client.ClientType > ClientType.Unknown ? client.ClientType.DisplayName().ToTitleCase()
-                : ValidationConstants.NotAvailable,
-                ContactPerson = client.ContactPerson != null ? client.ContactPerson.ToTitleCase() : ValidationConstants.NotAvailable,
-                ContactPersonEmail = client.ContactPersonEmail != null ? client.ContactPersonEmail.ToLower() : ValidationConstants.NotAvailable,
-                ContactPersonPhoneNumber = client.ContactPersonPhoneNumber ?? ValidationConstants.NotAvailable,
-                Country = client.Country != null ? client.Country.ToTitleCase() : ValidationConstants.NotAvailable,
-                Id = details.Id,
-                LogoUrl = client.LogoUrl ?? ValidationConstants.NotAvailable,
-                Motto = client.Motto ?? ValidationConstants.NotAvailable,
-                Name = client.Name.ToTitleCase(),
-                ParentClient = client.ParentClientId != null && client.ParentClientId != Guid.Empty ? client.ParentClientId.ToString() : ValidationConstants.NotAvailable,
-                ParentClientName = parentName,
-                State = client.State != null ? client.State.ToTitleCase() : ValidationConstants.NotAvailable,
-                IsActive = client.IsActive,
-                Logo = !string.IsNullOrEmpty(client.LogoUrl) ? _fileRepository.Get(client.LogoUrl, FileType.ClientLogo) : null
-            };
-        }
-        private async Task<GetClientSubscription> ToDto(string code)
-        {
-            var current = await _db.ClientSubscriptions.FirstOrDefaultAsync(x => x.Code == code);
-            var client = await Exists(current.ClientId);
-            var subscription = await _subscriptionRepository.Get(current.SubscriptionId);
+                var clientName = _configuration[SetUpConstants.clientName];
+                var contactPerson = _configuration[SetUpConstants.ContactPerson];
+                var appName = _configuration[SetUpConstants.AppName];
+                var appBaseUrl = _configuration[SetUpConstants.ApplicationBaseUrl];
+                var resourceType = _configuration[SetUpConstants.ResourceType];
+                // create a client
+                var client = new CreateClientDTO()
+                {
+                    Name = clientName,
+                    ContactPersonEmail = contactPerson,
+                    ClientType = ClientType.CoperateOrganisation,
+                };
+                var clientDetails = await CreateClient(client);
+                // create sso  application
+                var applicationDTO = new CreateApplicationDTO
+                {
+                    Name = appName,
+                    ApplicationType = ApplicationType.Service,
+                    ClientId = clientDetails.Data.Id,
+                    URL = appBaseUrl
+                };
+                var application = await _applicationRepository.Create(applicationDTO);
+                var resourceTypeDTO = new CreateResourceTypeDTO
+                {
+                    Name = resourceType,
+                    ApplicationId = application.Data.Id,
+                };
+                var createdResourceType = await _resourceType.Create(resourceTypeDTO);
+                var type = typeof(DefaultResources);
+                var defaultResources = GetConstants(type);
+                // create resources
+                var resources = defaultResources.Select(x => new CreateResourceDTO
+                {
+                    Name = x.GetRawConstantValue()?.ToString(),
+                    ResourceTypeId = createdResourceType.Data.Id
+                }).ToList();
+                var createdResources = await _resourceRepository.Create(resources);
 
-            return new GetClientSubscription
-            {
-                Client = client.Name,
-                ClientId = client.Id,
-                Status = current.IsActive,
-                SubcriptionId = subscription.Data.Id,
-                Subscription = subscription.Data.Name,
-            };
+                var permissions = defaultResources.Select(x => new CreatePermissionDTO
+                {
+                    Name = $"{x.GetRawConstantValue()?.ToString()} {DefaultResources.Permission}",
+                    PermissionType = PermissionType.All,
+                    Scope = Scope.clientResource,
+                    ResourceId = createdResources.Data.FirstOrDefault(y => y.Name == x.GetRawConstantValue()?.ToString()).Id,
+                });
+                // create super admin User
+                await CreateAdminUser(client);
+            }
         }
 
         public async Task<Response<GetClientDTO>> Update(Guid id, UpdateClientDTO client)
@@ -363,61 +258,6 @@ namespace SSOService.Services.Repositories.Relational.Implementations
             return status > 0 ? _response.SuccessResponse(Todto(current)) :
             _response.FailedResponse(returnType);
         }
-        public async Task InitializeApplication()
-        {
-            if (!_db.Users.Any())
-            {
-                var details = _configuration.GetSection("ApplicationDetails");
-                var clientName = details["ClientName"];
-                var contactPerson = details["SuperAdminEmail"];
-                var appName = details["Name"];
-                var appBaseUrl = details["ApplicationBaseUrl"];
-                var resourceType = details["User Management"];
-                // create a client
-                var client = new CreateClientDTO()
-                {
-                    Name = clientName,
-                    ContactPersonEmail = contactPerson,
-                    ClientType = ClientType.Unknown
-                };
-                var clientDetails = await CreateClient(client);
-                var type = typeof(DefaultResources);
-                // create sso  application
-                var applicationDTO = new CreateApplicationDTO
-                {
-                    Name = appName,
-                    ApplicationType = ApplicationType.Service,
-                    ClientId = clientDetails.Id,
-                    URL = appBaseUrl
-                };
-                var application = await _applicationRepository.Create(applicationDTO);
-                var resourceTypeDTO = new CreateResourceTypeDTO
-                {
-                    Name = resourceType,
-                    ApplicationId = application.Data.Id,
-                };
-                var createdResourceType = await _resourceType.Create(resourceTypeDTO);
-                var defaultResources = GetConstants(type);
-
-                // create resources
-                var resources = defaultResources.Select(x => new CreateResourceDTO
-                {
-                    Name = x.GetRawConstantValue()?.ToString(),
-                    ResourceTypeId = createdResourceType.Data.Id
-                }).ToList();
-                var createdResources = await _resourceRepository.Create(resources);
-
-                var permissions = defaultResources.Select(x => new CreatePermissionDTO
-                {
-                    Name = $"{x.GetRawConstantValue()?.ToString()} Permission",
-                    PermissionType = PermissionType.All,
-                    Scope = Scope.clientResource,
-                    ResourceId = createdResources.Data.FirstOrDefault(y => y.Name == x.GetRawConstantValue()?.ToString()).Id,
-                });
-                // create super admin User
-                await CreateAdminUser(client);
-            }
-        }
         private async Task<Client> Exists(Guid id)
         {
             var current = await _db.Clients.FirstOrDefaultAsync(x => x.Id == id && !x.IsDeleted);
@@ -435,7 +275,110 @@ namespace SSOService.Services.Repositories.Relational.Implementations
 
             return fieldInfos.Where(fi => fi.IsLiteral && !fi.IsInitOnly).ToList();
         }
+        private async Task<GetClientSubscription> ToDto(string code)
+        {
+            var current = await _db.ClientSubscriptions.FirstOrDefaultAsync(x => x.Code == code);
+            var client = await Exists(current.ClientId);
+            var subscription = await _subscriptionRepository.Get(current.SubscriptionId);
 
+            return new GetClientSubscription
+            {
+                Client = client.Name,
+                ClientId = client.Id,
+                Status = current.IsActive,
+                SubcriptionId = subscription.Data.Id,
+                Subscription = subscription.Data.Name,
+            };
+        }
+        private GetClientDTO Todto(Client client)
+        {
+            var parent = _db.Clients.Where(x => x.Id == client.ParentClientId).FirstOrDefault();
+            var details = _db.Clients.Where(x => x.Code == client.Code).FirstOrDefault();
+            var parentName = parent != null ? parent.Name : ValidationConstants.NotAvailable;
+
+            return new GetClientDTO
+            {
+                Address = client.Address == null ? ValidationConstants.NotAvailable : client.Address.ToTitleCase(),
+                ClientType = client.ClientType,
+                ClientTypeName = client.ClientType > ClientType.Unknown ? client.ClientType.DisplayName().ToTitleCase()
+                : ValidationConstants.NotAvailable,
+                ContactPerson = client.ContactPerson != null ? client.ContactPerson.ToTitleCase() : ValidationConstants.NotAvailable,
+                ContactPersonEmail = client.ContactPersonEmail != null ? client.ContactPersonEmail.ToLower() : ValidationConstants.NotAvailable,
+                ContactPersonPhoneNumber = client.ContactPersonPhoneNumber ?? ValidationConstants.NotAvailable,
+                Country = client.Country != null ? client.Country.ToTitleCase() : ValidationConstants.NotAvailable,
+                Id = details.Id,
+                LogoUrl = client.LogoUrl ?? ValidationConstants.NotAvailable,
+                Motto = client.Motto ?? ValidationConstants.NotAvailable,
+                Name = client.Name.ToTitleCase(),
+                ParentClient = client.ParentClientId != null && client.ParentClientId != Guid.Empty ? client.ParentClientId.ToString() : ValidationConstants.NotAvailable,
+                ParentClientName = parentName,
+                State = client.State != null ? client.State.ToTitleCase() : ValidationConstants.NotAvailable,
+                IsActive = client.IsActive,
+                Logo = !string.IsNullOrEmpty(client.LogoUrl) ? _fileRepository.Get(client.LogoUrl, FileType.ClientLogo) : null
+            };
+        }
+        private async Task CreateAdminUser(CreateClientDTO client)
+        {
+            var clientDetails = await _db.Clients.FirstOrDefaultAsync(x => x.ContactPersonEmail == client.ContactPersonEmail);
+            var role = new CreateRoleDTO
+            {
+                Name = RoleConstants.DefaultSuperAdmin,
+                ClientId = clientDetails.Id
+            };
+            var appName = _configuration[SetUpConstants.AppName];
+            var roleDetails = await _roleRepository.Create(role);
+            var sso = await _db.Applications.FirstOrDefaultAsync(x => x.Name == appName);
+            var resourceType = await _db.ResourceTypes.FirstOrDefaultAsync(x => x.ApplicationId == sso.Id);
+            var resources = await _db.Resources.Where(x => x.ResourceTypeId == resourceType.Id).ToListAsync();
+            var resourceIds = resources.Select(x => x.Id);
+            var permissions = _db.Permissions.Where(x => resourceIds.Contains(x.ResourceId));
+            //create a user
+            var user = new CreateUserDTO
+            {
+                FirstName = client.ContactPersonFirstName,
+                LastName = client.ContactPersonLastName,
+                Email = client.ContactPersonEmail
+            };
+            var userDetails = await _userReoository.CreateAsync(user);
+            await _userReoository.AddRole(roleDetails.Data.Id, userDetails.Data.Id);
+            var permissionsIds = permissions.Select(x => x.Id).ToList();
+            await _userReoository.AddPermission(permissionsIds, userDetails.Data.Id);
+            await _db.SaveChangesAsync();
+            //send an email
+        }
+        private async Task<Response<GetClientDTO>> CreateClient(CreateClientDTO client)
+        {
+
+            if (string.IsNullOrEmpty(client.Name))
+                return _response.FailedResponse(ReturnType,
+                string.Format(ValidationConstants.InvalidFieldFormatResponse, Name));
+            if (string.IsNullOrEmpty(client.ContactPersonEmail))
+                return _response.FailedResponse(ReturnType,
+                string.Format(ValidationConstants.InvalidFieldFormatResponse, Email));
+            if (!client.ContactPersonEmail.IsValidEmailFormat())
+                return _response.FailedResponse(ReturnType,
+                    string.Format(ValidationConstants.InvalidFieldFormatResponse, Email));
+            if (client.ClientType == ClientType.Unknown || !Enum.GetValues<ClientType>().Contains(client.ClientType))
+                return _response.FailedResponse(ReturnType,
+                    string.Format(ValidationConstants.InvalidFieldResponse, client.ClientType, Type));
+            string filePath = null;
+            if (client.Logo != null)
+            {
+                filePath = await _fileRepository.Save(client.Logo, client.Name, FileType.ClientLogo);
+            }
+
+            var newClient = new Client()
+            {
+                ClientType = client.ClientType,
+                ContactPersonEmail = client.ContactPersonEmail.Trim().ToUpper(),
+                Name = client.Name.Trim().ToUpper(),
+                LogoUrl = filePath
+            };
+            _db.Clients.Add(newClient);
+            var status = await _db.SaveChangesAsync() > 0;
+            var clientDetails = Todto(newClient);
+            return status ? _response.SuccessResponse(clientDetails) : _response.FailedResponse(ReturnType);
+        }
     }
 
 
