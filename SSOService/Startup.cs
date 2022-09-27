@@ -25,7 +25,6 @@ using StackifyLib.CoreLogger;
 using System;
 using System.Collections.Generic;
 using System.Text;
-using System.Threading.Tasks;
 
 namespace SSOService
 {
@@ -142,7 +141,7 @@ namespace SSOService
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
         public void Configure(IApplicationBuilder app,
-        IWebHostEnvironment env, ILoggerFactory logger, IClientRepository clientRepository)
+        IWebHostEnvironment env, ILoggerFactory logger)
         {
             if (env.IsDevelopment())
             {
