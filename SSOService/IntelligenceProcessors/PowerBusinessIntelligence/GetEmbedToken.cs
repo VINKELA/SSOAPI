@@ -2,9 +2,9 @@
 using System.Net;
 using System.Net.Http;
 using System.Net.Http.Headers;
-using Utility.Logging;
+using System.Net.Http.Json;
 
-namespace PowerTrackEnterprise.Core.IntelligenceProcessors.PowerBusinessIntelligence
+namespace SSOService.IntelligenceProcessors.PowerBusinessIntelligence
 {
     public class GetEmbedToken
     {
@@ -19,9 +19,8 @@ namespace PowerTrackEnterprise.Core.IntelligenceProcessors.PowerBusinessIntellig
                     return httpClient.PostAsJsonAsync(new Uri(requestUri), dataObject).Result;
                 }                
             }
-            catch (Exception e)
+            catch (Exception)
             {
-                ActivityLogger.Log(e);
                 return null;
             }
         }

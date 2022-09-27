@@ -2,9 +2,8 @@
 using System.Collections.Generic;
 using System.Net;
 using System.Net.Http;
-using Utility.Logging;
 
-namespace PowerTrackEnterprise.Core.IntelligenceProcessors.PowerBusinessIntelligence
+namespace SSOService.IntelligenceProcessors.PowerBusinessIntelligence
 {
     public static class GetAuthToken
     {
@@ -29,9 +28,8 @@ namespace PowerTrackEnterprise.Core.IntelligenceProcessors.PowerBusinessIntellig
                     return httpClient.PostAsync(new Uri(requestUri), ssoConfigContent).Result;
                 }
             }
-            catch (Exception e)
+            catch (Exception)
             {
-                ActivityLogger.Log(e);
                 return null;
             }
         }
