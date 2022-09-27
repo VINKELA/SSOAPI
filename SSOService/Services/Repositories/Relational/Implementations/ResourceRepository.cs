@@ -47,7 +47,8 @@ namespace SSOService.Services.Repositories.Relational.Implementations
             var list = resourceDTO.Select(x => new Resource
             {
                 Name = x.Name,
-                ApplicationId = x.ResourceTypeId,
+                ResourceTypeId = x.ResourceTypeId,
+                ApplicationId = x.ApplicationId,
                 CreatedBy = _currentUser?.Email
             });
             await _db.AddRangeAsync(list);

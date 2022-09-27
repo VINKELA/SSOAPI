@@ -10,9 +10,7 @@ namespace SSOService.Models.DTOs
         public string Country { get; set; }
         public string State { get; set; }
         public ClientType ClientType { get; set; }
-        public string ContactPerson { get; set; }
         public string ContactPersonEmail { get; set; }
-        public string ContactPersonPhoneNumber { get; set; }
         public string LogoUrl { get; set; }
         public string Motto { get; set; }
         public string ParentClient { get; set; }

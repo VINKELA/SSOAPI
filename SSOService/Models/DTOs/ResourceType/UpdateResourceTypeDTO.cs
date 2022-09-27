@@ -1,4 +1,4 @@
-﻿namespace SSOService.Models.DTOs.ServiceType
+﻿namespace SSOService.Models.DTOs.ReSourceType
 {
     public class UpdateResourceTypeDTO
     {

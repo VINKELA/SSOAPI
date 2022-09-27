@@ -33,15 +33,15 @@ namespace SSOService.Services.Repositories.Relational.Implementations
         }
         public async Task<Response<GetRoleDTO>> Create(CreateRoleDTO roleDTO)
         {
-            var application = new Role
+            var role = new Role
             {
                 Name = roleDTO.Name,
                 ClientId = roleDTO.ClientId,
-                CreatedBy = _currentUser.Email
+                CreatedBy = _currentUser?.Email
             };
-            await _db.AddAsync(application);
+            await _db.AddAsync(role);
             var status = await _db.SaveChangesAsync() > 0;
-            return status ? _response.SuccessResponse(ToDto(application))
+            return status ? _response.SuccessResponse(ToDto(role))
                 : _response.FailedResponse(ReturnType);
         }
         public async Task<Response<GetRoleDTO>> Update(Guid id, UpdateRoleDTO roleDTO)

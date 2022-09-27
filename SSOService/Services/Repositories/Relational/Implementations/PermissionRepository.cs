@@ -119,8 +119,9 @@ namespace SSOService.Services.Repositories.Relational.Implementations
             return new GetPermissionDTO
             {
                 Scope = permission.Scope.DisplayName(),
-                PermissionType = permission.PermissionType.DisplayName()
-
+                PermissionType = permission.PermissionType.DisplayName(),
+                Name = permission.Name,
+                ResourceId = permission.ResourceId
             };
         }
         private async Task<bool> HasChanged(Permission permission)

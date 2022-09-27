@@ -10,8 +10,8 @@ using SSOService.Models.DbContexts;
 namespace SSOService.Migrations
 {
     [DbContext(typeof(SSODbContext))]
-    [Migration("20220913092212_initial-create")]
-    partial class initialcreate
+    [Migration("20220926235640_initial-migrations")]
+    partial class initialmigrations
     {
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
@@ -109,7 +109,7 @@ namespace SSOService.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("ApplicationAuthentifications");
+                    b.ToTable("ApplicationAuthentications");
                 });
 
             modelBuilder.Entity("SSOService.Models.Domains.ApplicationPermission", b =>
@@ -526,7 +526,7 @@ namespace SSOService.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<Guid>("ClientId")
+                    b.Property<Guid>("ApplicationId")
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<string>("Code")
@@ -664,7 +664,7 @@ namespace SSOService.Migrations
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<decimal>("AmountInNaira")
-                        .HasColumnType("decimal(18,2)");
+                        .HasColumnType("decimal(18,4)");
 
                     b.Property<Guid>("ClientId")
                         .HasColumnType("uniqueidentifier");

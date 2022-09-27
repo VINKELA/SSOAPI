@@ -11,7 +11,7 @@ using SSOService.Models.DTOs.Client;
 using SSOService.Models.DTOs.Permission;
 using SSOService.Models.DTOs.Role;
 using SSOService.Models.DTOs.Service;
-using SSOService.Models.DTOs.ServiceType;
+using SSOService.Models.DTOs.ReSourceType;
 using SSOService.Models.DTOs.User;
 using SSOService.Models.Enums;
 using SSOService.Services.General.Interfaces;
@@ -44,9 +44,10 @@ namespace SSOService.Services.Repositories.Relational.Implementations
         private readonly IApplicationRepository _applicationRepository;
         private readonly IResourceType _resourceType;
         private readonly IResourceRepository _resourceRepository;
+        private readonly IPermissionRepository _permissionRepository;
         public ClientRepository(SSODbContext db, IServiceResponse response, IFileRepository fileRepository, IApplicationRepository applicationRepository,
             IResourceType resourceType, IConfiguration configuration, ISubscriptionRepository subscriptionRepository, IUserRepository userRepository,
-            IRoleRepository roleRepository, IResourceRepository resourceRepository)
+            IRoleRepository roleRepository, IResourceRepository resourceRepository,IPermissionRepository permissionRepository)
         {
             _db = db;
             _response = response;
@@ -58,19 +59,18 @@ namespace SSOService.Services.Repositories.Relational.Implementations
             _resourceRepository = resourceRepository;
             _resourceType = resourceType;
             _configuration = configuration;
-
+            _permissionRepository = permissionRepository;
         }
         public async Task<Response<GetClientDTO>> Save(CreateClientDTO client)
         {
-
             var operation = await CreateClient(client);
             if (operation.Status)
-
                 await CreateAdminUser(client);
-
             return operation;
-
         }
+        public async Task<Response<GetClientDTO>> InitializeApp(CreateClientDTO client)
+        => await InitializeApplication(client);
+            
         public async Task<Response<GetClientDTO>> ChangeState(Guid id, bool deactivate = false, bool delete = false)
         {
 
@@ -155,23 +155,14 @@ namespace SSOService.Services.Repositories.Relational.Implementations
             if (status) return _response.SuccessResponse(await ToDto(current.Code));
             return _response.FailedResponse(ClientSubscriptionReturnType);
         }
-        public async Task InitializeApplication()
+        private async Task<Response<GetClientDTO>> InitializeApplication(CreateClientDTO createClient)
         {
-            if (!_db.Users.Any())
+            if (!_db.Clients.Any())
             {
-                var clientName = _configuration[SetUpConstants.clientName];
-                var contactPerson = _configuration[SetUpConstants.ContactPerson];
                 var appName = _configuration[SetUpConstants.AppName];
                 var appBaseUrl = _configuration[SetUpConstants.ApplicationBaseUrl];
                 var resourceType = _configuration[SetUpConstants.ResourceType];
-                // create a client
-                var client = new CreateClientDTO()
-                {
-                    Name = clientName,
-                    ContactPersonEmail = contactPerson,
-                    ClientType = ClientType.CoperateOrganisation,
-                };
-                var clientDetails = await CreateClient(client);
+                var clientDetails = await CreateClient(createClient);
                 // create sso  application
                 var applicationDTO = new CreateApplicationDTO
                 {
@@ -189,24 +180,48 @@ namespace SSOService.Services.Repositories.Relational.Implementations
                 var createdResourceType = await _resourceType.Create(resourceTypeDTO);
                 var type = typeof(DefaultResources);
                 var defaultResources = GetConstants(type);
+                var permissions = new List<CreatePermissionDTO>();
+                var resources = new List<CreateResourceDTO>();
+                foreach (var resource in defaultResources)
+                {
+                    resources.Add(new CreateResourceDTO
+                    {
+                        Name = resource.GetRawConstantValue()?.ToString(),
+                        ResourceTypeId = createdResourceType.Data.Id,
+                        ApplicationId = application.Data.Id
+                    });
+                }
                 // create resources
-                var resources = defaultResources.Select(x => new CreateResourceDTO
-                {
-                    Name = x.GetRawConstantValue()?.ToString(),
-                    ResourceTypeId = createdResourceType.Data.Id
-                }).ToList();
                 var createdResources = await _resourceRepository.Create(resources);
-
-                var permissions = defaultResources.Select(x => new CreatePermissionDTO
+                foreach (var resource in defaultResources)
                 {
-                    Name = $"{x.GetRawConstantValue()?.ToString()} {DefaultResources.Permission}",
-                    PermissionType = PermissionType.All,
-                    Scope = Scope.clientResource,
-                    ResourceId = createdResources.Data.FirstOrDefault(y => y.Name == x.GetRawConstantValue()?.ToString()).Id,
-                });
+                    var resourceId = createdResources.Data.
+                        FirstOrDefault(y => y.Name == resource
+                        .GetRawConstantValue()?.ToString()).Id;
+
+                    permissions.Add(new CreatePermissionDTO
+                    {
+                        Name = $"{resource.GetRawConstantValue()?.ToString()} {DefaultResources.Permission}",
+                        PermissionType = PermissionType.All,
+                        Scope = Scope.all,
+                        ResourceId = resourceId,
+                    });
+                    permissions.Add(new CreatePermissionDTO
+                    {
+                        Name = $"{resource.GetRawConstantValue()?.ToString()} {DefaultResources.Permission}",
+                        PermissionType = PermissionType.All,
+                        Scope = Scope.clientResource,
+                        ResourceId = resourceId
+                    });
+                }
+
+
+                await _permissionRepository.Create(permissions);
                 // create super admin User
-                await CreateAdminUser(client);
+                await CreateAdminUser(createClient, true);
+                return clientDetails;
             }
+            return _response.FailedResponse<GetClientDTO>(null);
         }
         public async Task<Response<GetClientDTO>> Update(Guid id, UpdateClientDTO client)
         {
@@ -299,9 +314,7 @@ namespace SSOService.Services.Repositories.Relational.Implementations
                 ClientType = client.ClientType,
                 ClientTypeName = client.ClientType > ClientType.Unknown ? client.ClientType.DisplayName().ToTitleCase()
                 : ValidationConstants.NotAvailable,
-                ContactPerson = client.ContactPerson != null ? client.ContactPerson.ToTitleCase() : ValidationConstants.NotAvailable,
                 ContactPersonEmail = client.ContactPersonEmail != null ? client.ContactPersonEmail.ToLower() : ValidationConstants.NotAvailable,
-                ContactPersonPhoneNumber = client.ContactPersonPhoneNumber ?? ValidationConstants.NotAvailable,
                 Country = client.Country != null ? client.Country.ToTitleCase() : ValidationConstants.NotAvailable,
                 Id = details.Id,
                 LogoUrl = client.LogoUrl ?? ValidationConstants.NotAvailable,
@@ -314,12 +327,12 @@ namespace SSOService.Services.Repositories.Relational.Implementations
                 Logo = !string.IsNullOrEmpty(client.LogoUrl) ? _fileRepository.Get(client.LogoUrl, FileType.ClientLogo) : null
             };
         }
-        private async Task CreateAdminUser(CreateClientDTO client)
+        private async Task CreateAdminUser(CreateClientDTO client, bool createAppAdmin = false)
         {
             var clientDetails = await _db.Clients.FirstOrDefaultAsync(x => x.ContactPersonEmail == client.ContactPersonEmail);
             var role = new CreateRoleDTO
             {
-                Name = RoleConstants.DefaultSuperAdmin,
+                Name = createAppAdmin? RoleConstants.DefaultApplicationAdmin: RoleConstants.DefaultClientAdmin,
                 ClientId = clientDetails.Id
             };
             var appName = _configuration[SetUpConstants.AppName];
@@ -328,19 +341,25 @@ namespace SSOService.Services.Repositories.Relational.Implementations
             var resourceType = await _db.ResourceTypes.FirstOrDefaultAsync(x => x.ApplicationId == sso.Id);
             var resources = await _db.Resources.Where(x => x.ResourceTypeId == resourceType.Id).ToListAsync();
             var resourceIds = resources.Select(x => x.Id);
-            var permissions = _db.Permissions.Where(x => resourceIds.Contains(x.ResourceId));
+            var permissions = new List<Permission>();
+            var scope = createAppAdmin ? Scope.all : Scope.clientResource;
+             permissions =  await _db.Permissions.Where(x => resourceIds.Contains(x.ResourceId) 
+            && x.Scope == scope).ToListAsync();
             //create a user
+            var tempPassword = Guid.NewGuid().ToString()+"A";
             var user = new CreateUserDTO
             {
                 FirstName = client.ContactPersonFirstName,
                 LastName = client.ContactPersonLastName,
-                Email = client.ContactPersonEmail
+                Email = client.ContactPersonEmail,
+                PhoneNumber = client.ContactPersonPhoneNumber,
+                Password =tempPassword,
+                Confirmation = tempPassword
             };
             var userDetails = await _userReoository.CreateAsync(user);
             await _userReoository.AddRole(roleDetails.Data.Id, userDetails.Data.Id);
             var permissionsIds = permissions.Select(x => x.Id).ToList();
             await _userReoository.AddPermission(permissionsIds, userDetails.Data.Id);
-            await _db.SaveChangesAsync();
             //send an email
         }
         private async Task<Response<GetClientDTO>> CreateClient(CreateClientDTO client)

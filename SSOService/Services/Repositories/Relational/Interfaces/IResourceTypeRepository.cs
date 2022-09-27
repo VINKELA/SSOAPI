@@ -1,5 +1,5 @@
 ﻿using SSOService.Models;
-using SSOService.Models.DTOs.ServiceType;
+using SSOService.Models.DTOs.ReSourceType;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;

@@ -44,7 +44,7 @@ namespace SSOService.Services.Repositories.Relational.Implementations
                 ApplicationType = applicationDTO.ApplicationType,
                 URL = applicationDTO.URL,
                 ClientId = applicationDTO.ClientId,
-                CreatedBy = _currentUser.Email
+                CreatedBy = _currentUser?.Email
             };
             await _db.AddAsync(application);
             var status = await _db.SaveChangesAsync() > 0;

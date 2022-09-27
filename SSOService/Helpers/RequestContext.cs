@@ -8,6 +8,6 @@ namespace SSOService.Helpers
     {
         private readonly static HttpContextAccessor httpContextAccessor = new();
         public static GetUserDTO GetCurrentUser
-            => (GetUserDTO)httpContextAccessor.HttpContext.Items[HttpConstants.CurrentUser];
+            => httpContextAccessor.HttpContext != null? (GetUserDTO)httpContextAccessor.HttpContext.Items[HttpConstants.CurrentUser]: null;
     }
 }

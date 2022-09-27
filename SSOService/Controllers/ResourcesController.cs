@@ -12,11 +12,11 @@ namespace SSOService.Controllers
     [Route("api/[controller]")]
     [ApiController]
     [AuthorizedRequest]
-    public class ServicesController : ControllerBase
+    public class ResourcesController : ControllerBase
     {
         private readonly IResourceRepository _serviceRepository;
 
-        public ServicesController(IResourceRepository serviceRepository)
+        public ResourcesController(IResourceRepository serviceRepository)
             => _serviceRepository = serviceRepository;
 
         // GET: api/Services

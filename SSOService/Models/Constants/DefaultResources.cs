@@ -9,7 +9,7 @@
         public const string Resource = "Resource";
         public const string Subscription = "Subscription";
         public const string Permission = "Permission";
-        public const string ResourceType = "ResourceType";
+        public const string ResourceType = "Resource Type";
         public const string ApplicationPermission = "Application Permission";
         public const string ApplicationResource = "Application Resource";
         public const string RoleClaim = "Role Claim";

@@ -524,7 +524,7 @@ namespace SSOService.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<Guid>("ClientId")
+                    b.Property<Guid>("ApplicationId")
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<string>("Code")
@@ -662,7 +662,7 @@ namespace SSOService.Migrations
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<decimal>("AmountInNaira")
-                        .HasColumnType("decimal(18,2)");
+                        .HasColumnType("decimal(18,4)");
 
                     b.Property<Guid>("ClientId")
                         .HasColumnType("uniqueidentifier");

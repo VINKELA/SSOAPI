@@ -7,5 +7,6 @@ namespace SSOService.Models.DTOs.Service
     {
         public string Name { get; set; }
         public Guid ResourceTypeId { get; set; }
+        public Guid ApplicationId { get; set; }
     }
 }

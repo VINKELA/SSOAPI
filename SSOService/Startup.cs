@@ -25,7 +25,7 @@ using StackifyLib.CoreLogger;
 using System;
 using System.Collections.Generic;
 using System.Text;
-
+using System.Threading.Tasks;
 
 namespace SSOService
 {
@@ -161,7 +161,6 @@ namespace SSOService
             {
                 endpoints.MapControllers();
             });
-            clientRepository.InitializeApplication();
         }
     }
 }

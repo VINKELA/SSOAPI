@@ -3,12 +3,12 @@ using Microsoft.EntityFrameworkCore.Migrations;
 
 namespace SSOService.Migrations
 {
-    public partial class initialcreate : Migration
+    public partial class initialmigrations : Migration
     {
         protected override void Up(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.CreateTable(
-                name: "ApplicationAuthentifications",
+                name: "ApplicationAuthentications",
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
@@ -26,7 +26,7 @@ namespace SSOService.Migrations
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_ApplicationAuthentifications", x => x.Id);
+                    table.PrimaryKey("PK_ApplicationAuthentications", x => x.Id);
                 });
 
             migrationBuilder.CreateTable(
@@ -260,7 +260,7 @@ namespace SSOService.Migrations
                 {
                     Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     Name = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    ClientId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    ApplicationId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     IsActive = table.Column<bool>(type: "bit", nullable: false),
                     IsDeleted = table.Column<bool>(type: "bit", nullable: false),
                     CreatedOn = table.Column<DateTime>(type: "datetime2", nullable: false),
@@ -336,7 +336,7 @@ namespace SSOService.Migrations
                     Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     Name = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     ClientType = table.Column<int>(type: "int", nullable: false),
-                    AmountInNaira = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
+                    AmountInNaira = table.Column<decimal>(type: "decimal(18,4)", nullable: false),
                     Interval = table.Column<int>(type: "int", nullable: false),
                     ClientId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     IsActive = table.Column<bool>(type: "bit", nullable: false),
@@ -490,7 +490,7 @@ namespace SSOService.Migrations
         protected override void Down(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.DropTable(
-                name: "ApplicationAuthentifications");
+                name: "ApplicationAuthentications");
 
             migrationBuilder.DropTable(
                 name: "ApplicationPermissions");

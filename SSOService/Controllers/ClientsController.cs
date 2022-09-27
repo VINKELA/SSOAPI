@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using SSOService.Extensions;
 using SSOService.Models;
 using SSOService.Models.DTOs;
@@ -20,6 +21,11 @@ namespace SSOService.Controllers
 
         public ClientsController(IClientRepository client)
             => _client = client;
+        [AllowAnonymous]
+        [HttpPost("ApplicationSetUp")]
+        [ProducesResponseType(type: typeof(Response<GetClientDTO>), statusCode: 200)]
+        public async Task<IActionResult> InitializeApplication([FromForm] CreateClientDTO client)
+        => Ok(await _client.InitializeApp(client));
         // POST: api/Clients
         // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
         [HttpPost]

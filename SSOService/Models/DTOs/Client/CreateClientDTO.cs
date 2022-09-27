@@ -10,6 +10,7 @@ namespace SSOService.Models.DTOs
         public string ContactPersonEmail { get; set; }
         public string ContactPersonFirstName { get; set; }
         public string ContactPersonLastName { get; set; }
+        public string ContactPersonPhoneNumber { get; set; }
         public IFormFile Logo { get; set; }
     }
 }

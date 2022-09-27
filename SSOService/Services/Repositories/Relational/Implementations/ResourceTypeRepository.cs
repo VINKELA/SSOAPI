@@ -4,7 +4,7 @@ using SSOService.Models;
 using SSOService.Models.Constants;
 using SSOService.Models.DbContexts;
 using SSOService.Models.Domains;
-using SSOService.Models.DTOs.ServiceType;
+using SSOService.Models.DTOs.ReSourceType;
 using SSOService.Models.DTOs.User;
 using SSOService.Services.General.Interfaces;
 using SSOService.Services.Interfaces;
@@ -34,7 +34,7 @@ namespace SSOService.Services.Repositories.Relational.Implementations
             {
                 Name = serviceTypeDTO.Name,
                 ApplicationId = serviceTypeDTO.ApplicationId,
-                CreatedBy = _currentUser.Email
+                CreatedBy = _currentUser?.Email
             };
             await _db.AddAsync(application);
             var status = await _db.SaveChangesAsync() > 0;

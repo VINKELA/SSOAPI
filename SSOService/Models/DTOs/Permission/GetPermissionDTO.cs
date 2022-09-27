@@ -6,8 +6,7 @@ namespace SSOService.Models.DTOs.Permission
     {
         public string PermissionType { get; set; }
         public string Scope { get; set; }
-        public string Entity { get; set; }
-        public Guid ClientId { get; set; }
-
+        public string Name { get; set; }
+        public Guid ResourceId { get; set; }
     }
 }
