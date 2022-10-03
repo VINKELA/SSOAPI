@@ -5,6 +5,7 @@ namespace SSOService.Models.Domains
     // This are users of the services
     public class User : EntityTracking
     {
+        public long UserId { get; set; }    
         public string FirstName { get; set; }
         public string LastName { get; set; }
         public string Email { get; set; }
@@ -18,7 +19,8 @@ namespace SSOService.Models.Domains
         public string UserName { get; set; }
         public int AccessFailedCount { get; set; }
         public string FilePath { get; set; }
-        public Guid? ClientId { get; set; }
+        public long? ClientId { get; set; }
+        public Client Client { get; set; }
 
     }
 }

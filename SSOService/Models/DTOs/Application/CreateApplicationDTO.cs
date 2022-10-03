@@ -8,7 +8,7 @@ namespace SSOService.Models.DTOs.Application
         public string Name { get; set; }
         public ApplicationType ApplicationType { get; set; }
         public string URL { get; set; }
-        public Guid ClientId { get; set; }
+        public long ClientId { get; set; }
 
     }
 }

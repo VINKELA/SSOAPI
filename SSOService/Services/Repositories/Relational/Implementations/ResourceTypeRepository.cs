@@ -15,22 +15,22 @@ using System.Threading.Tasks;
 
 namespace SSOService.Services.Repositories.Relational.Implementations
 {
-    public class ResourceTypeRepository : IResourceType
+    public class ServiceTypeRepository : IServiceType
     {
         private readonly SSODbContext _db;
         private readonly IServiceResponse _response;
-        private readonly GetResourceTypeDTO ReturnType = new();
+        private readonly GetServiceTypeDTO ReturnType = new();
         private readonly GetUserDTO _currentUser = RequestContext.GetCurrentUser;
 
-        public ResourceTypeRepository(SSODbContext db, IServiceResponse serviceResponse)
+        public ServiceTypeRepository(SSODbContext db, IServiceResponse serviceResponse)
         {
             _db = db;
             _response = serviceResponse;
         }
-        public async Task<Response<GetResourceTypeDTO>> Create(CreateResourceTypeDTO serviceTypeDTO)
+        public async Task<Response<GetServiceTypeDTO>> Create(CreateServiceTypeDTO serviceTypeDTO)
         {
 
-            var application = new ResourceType
+            var application = new ServiceType
             {
                 Name = serviceTypeDTO.Name,
                 ApplicationId = serviceTypeDTO.ApplicationId,
@@ -41,11 +41,11 @@ namespace SSOService.Services.Repositories.Relational.Implementations
             return status ? _response.SuccessResponse(ToDto(application))
                 : _response.FailedResponse(ReturnType);
         }
-        public async Task<Response<GetResourceTypeDTO>> Update(Guid id, UpdateResourceTypeDTO serviceTypeDTO)
+        public async Task<Response<GetServiceTypeDTO>> Update(long id, UpdateServiceTypeDTO serviceTypeDTO)
         {
 
-            var currentServiceType = _db.ResourceTypes.FirstOrDefault(x => x.Id == id);
-            var application = new ResourceType
+            var currentServiceType = _db.ServiceTypes.FirstOrDefault(x => x.ServiceTypeId == id);
+            var application = new ServiceType
             {
                 Name = serviceTypeDTO.Name?.ToLower() ?? currentServiceType.Name,
                 LastModifiedBy = _currentUser.Email,
@@ -56,7 +56,7 @@ namespace SSOService.Services.Repositories.Relational.Implementations
             return status ? _response.SuccessResponse(ToDto(currentServiceType))
                 : _response.FailedResponse(ReturnType);
         }
-        public async Task<Response<GetResourceTypeDTO>> ChangeState(Guid id, bool deactivate = false, bool delete = false)
+        public async Task<Response<GetServiceTypeDTO>> ChangeState(long id, bool deactivate = false, bool delete = false)
         {
             var current = await Exists(id);
 
@@ -71,24 +71,24 @@ namespace SSOService.Services.Repositories.Relational.Implementations
             else current.IsActive = true;
             var hasChanged = await HasChanged(current);
             if (hasChanged)
-                return _response.FailedResponse(ReturnType, string.Format(ValidationConstants.EntityChangedByAnotherUser, current.Id));
+                return _response.FailedResponse(ReturnType, string.Format(ValidationConstants.EntityChangedByAnotherUser, current.ServiceTypeId));
             current.ConcurrencyStamp = Guid.NewGuid();
-            _db.ResourceTypes.Update(current);
+            _db.ServiceTypes.Update(current);
             var result = await _db.SaveChangesAsync();
             return result > 0 ? _response.SuccessResponse(ToDto(current)) :
             _response.FailedResponse(ReturnType);
         }
-        public async Task<Response<GetResourceTypeDTO>> Get(Guid id)
+        public async Task<Response<GetServiceTypeDTO>> Get(long id)
         {
             var current = await Exists(id);
             if (current == null)
                 return _response.FailedResponse(ReturnType, string.Format(ValidationConstants.FieldNotFound, DefaultResources.ResourceType));
             return _response.SuccessResponse(ToDto(current));
         }
-        public async Task<Response<IEnumerable<GetResourceTypeDTO>>> Get(string name)
+        public async Task<Response<IEnumerable<GetServiceTypeDTO>>> Get(string name)
         {
 
-            var list = await _db.ResourceTypes.Where(x => !x.IsDeleted).ToListAsync();
+            var list = await _db.ServiceTypes.Where(x => !x.IsDeleted).ToListAsync();
             if (!string.IsNullOrEmpty(name))
             {
                 name = name.Trim().ToUpper();
@@ -97,23 +97,23 @@ namespace SSOService.Services.Repositories.Relational.Implementations
             return _response.SuccessResponse(list.Select(x => ToDto(x)));
         }
 
-        private static GetResourceTypeDTO ToDto(ResourceType serviceType)
+        private static GetServiceTypeDTO ToDto(ServiceType serviceType)
         {
-            return new GetResourceTypeDTO
+            return new GetServiceTypeDTO
             {
                 ApplicationId = serviceType.ApplicationId,
-                Id = serviceType.Id,
+                Id = serviceType.ServiceTypeId,
                 Name = serviceType.Name
             };
         }
-        private async Task<bool> HasChanged(ResourceType serviceType)
+        private async Task<bool> HasChanged(ServiceType serviceType)
         {
-            var lastest = await Exists(serviceType.Id);
+            var lastest = await Exists(serviceType.ServiceTypeId);
             return !(serviceType.ConcurrencyStamp == lastest.ConcurrencyStamp);
         }
-        private async Task<ResourceType> Exists(Guid id)
+        private async Task<ServiceType> Exists(long id)
         {
-            var current = await _db.ResourceTypes.FirstOrDefaultAsync(x => x.Id == id && !x.IsDeleted);
+            var current = await _db.ServiceTypes.FirstOrDefaultAsync(x => x.ServiceTypeId == id && !x.IsDeleted);
             return current;
         }
 

@@ -10,9 +10,9 @@ namespace SSOService.Services.Repositories.Relational.Interfaces
     public interface IRoleRepository
     {
         Task<Response<IEnumerable<GetRoleDTO>>> Get(string name);
-        Task<Response<GetRoleDTO>> Get(Guid id);
-        Task<Response<GetRoleDTO>> ChangeState(Guid id, bool deactivate = false, bool delete = false);
-        Task<Response<GetRoleDTO>> Update(Guid id, UpdateRoleDTO roleDTO);
+        Task<Response<GetRoleDTO>> Get(long id);
+        Task<Response<GetRoleDTO>> ChangeState(long id, bool deactivate = false, bool delete = false);
+        Task<Response<GetRoleDTO>> Update(long id, UpdateRoleDTO roleDTO);
         Task<Response<GetRoleDTO>> Create(CreateRoleDTO roleDTO);
     }
 }

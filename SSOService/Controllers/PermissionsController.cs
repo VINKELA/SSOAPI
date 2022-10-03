@@ -26,13 +26,13 @@ namespace SSOService.Controllers
 
         // GET: api/Permissions/5
         [HttpGet("{id}")]
-        public async Task<ActionResult<Response<GetPermissionDTO>>> GetPermission(Guid id)
+        public async Task<ActionResult<Response<GetPermissionDTO>>> GetPermission(long id)
             => Ok(await _permissionRepository.Get(id));
 
         // PUT: api/Permissions/5
         // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
         [HttpPut("{id}")]
-        public async Task<ActionResult<Response<GetPermissionDTO>>> PutPermission(Guid id, UpdatePermissionDTO permission)
+        public async Task<ActionResult<Response<GetPermissionDTO>>> PutPermission(long id, UpdatePermissionDTO permission)
             => Ok(await _permissionRepository.Update(id, permission));
 
         // POST: api/Permissions
@@ -43,14 +43,14 @@ namespace SSOService.Controllers
 
         // DELETE: api/Permissions/5
         [HttpDelete("{id}")]
-        public async Task<ActionResult<Response<GetPermissionDTO>>> DeletePermission(Guid id)
+        public async Task<ActionResult<Response<GetPermissionDTO>>> DeletePermission(long id)
             => Ok(await _permissionRepository.ChangeState(id, false, true));
         [HttpPatch("activate/{id}")]
-        public async Task<ActionResult<Response<GetPermissionDTO>>> Activate(Guid id)
+        public async Task<ActionResult<Response<GetPermissionDTO>>> Activate(long id)
             => Ok(await _permissionRepository.ChangeState(id));
 
         [HttpPatch("deactivate/{id}")]
-        public async Task<ActionResult<Response<GetPermissionDTO>>> Deactivate(Guid id)
+        public async Task<ActionResult<Response<GetPermissionDTO>>> Deactivate(long id)
             => Ok(await _permissionRepository.ChangeState(id, true));
     }
 }

@@ -13,6 +13,7 @@ using SSOService.MiddleWares;
 using SSOService.Models.Constants;
 using SSOService.Models.DbContexts;
 using SSOService.Services.General.Implementation;
+using SSOService.Services.General.Implementation.PowerTrackEnterprise.Core.ProcessingMethods.ProcessDestination;
 using SSOService.Services.General.Interfaces;
 using SSOService.Services.Interfaces;
 using SSOService.Services.Repositories.NonRelational.Implementations;
@@ -34,6 +35,9 @@ namespace SSOService
         private const string Version = "v1";
         private const string DBConnection = "DefaultConnection";
         private const string SwaggerUrl = "/swagger/v1/swagger.json";
+        private const string UriString = "https://SSOMarshal.com";
+        private const string Bearer = "Bearer";
+        private const string APPNAME = "SSO Marshal API Documentation";
 
         public Startup(IWebHostEnvironment env)
         {
@@ -68,14 +72,12 @@ namespace SSOService
             services.AddScoped<IApplicationRepository, ApplicationRepository>();
             services.AddScoped<IPermissionRepository, PermissionRepository>();
             services.AddScoped<IResourceRepository, ResourceRepository>();
-            services.AddScoped<IResourceType, ResourceTypeRepository>();
+            services.AddScoped<IServiceType, ServiceTypeRepository>();
             services.AddScoped<ISubscriptionRepository, SubscriptionRepository>();
             services.AddScoped<IRoleRepository, RoleRepository>();
-
-
+            services.AddScoped<IRouter, Router>();
 
             services.AddLogging();
-
 
             services.AddAuthentication(options =>
             {
@@ -99,16 +101,16 @@ namespace SSOService
                 c.SwaggerDoc("DOC v1", new OpenApiInfo
                 {
                     Version = Version,
-                    Title = "SSO API Documentation",
-                    Description = "SSO api documentation",
-                    TermsOfService = new Uri("https://robotnigeria.com"),
+                    Title = APPNAME,
+                    Description = "SSO Marshal API documentation",
+                    TermsOfService = new Uri(UriString),
                     License = new OpenApiLicense
                     {
-                        Name = "ROBOT",
-                        Url = new Uri("https://robotnigeria.com")
+                        Name = "SSO Marshal API",
+                        Url = new Uri(UriString)
                     },
                 });
-                c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+                c.AddSecurityDefinition(Bearer, new OpenApiSecurityScheme
                 {
                     In = ParameterLocation.Header,
                     Description = "Enter JWT with Bearer token into this field",
@@ -123,25 +125,20 @@ namespace SSOService
                             Reference = new OpenApiReference
                             {
                                 Type = ReferenceType.SecurityScheme,
-                                Id = "Bearer",
+                                Id = Bearer,
                             },
                             Scheme = "oauth2",
-                            Name = "Bearer",
+                            Name = Bearer,
                             In = ParameterLocation.Header,
                         },
                         new List<string>()
                     }
                  });
             });
-
-
-
-
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
-        public void Configure(IApplicationBuilder app,
-        IWebHostEnvironment env, ILoggerFactory logger)
+        public void Configure(IApplicationBuilder app, IWebHostEnvironment env, ILoggerFactory logger)
         {
             if (env.IsDevelopment())
             {

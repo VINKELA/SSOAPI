@@ -4,6 +4,7 @@
     {
         query = 1,
         body,
-        form
+        header,
+        url
     }
 }

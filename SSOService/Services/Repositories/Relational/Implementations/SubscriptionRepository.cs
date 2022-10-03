@@ -44,10 +44,10 @@ namespace SSOService.Subscriptions.Repositories.Relational.Implementations
             return status ? _response.SuccessResponse(ToDto(application))
                 : _response.FailedResponse(ReturnType);
         }
-        public async Task<Response<GetSubscriptionDTO>> Update(Guid id, UpdateSubscriptionDTO subscriptionDTO)
+        public async Task<Response<GetSubscriptionDTO>> Update(long id, UpdateSubscriptionDTO subscriptionDTO)
         {
 
-            var currentSubscription = _db.Subscriptions.FirstOrDefault(x => x.Id == id);
+            var currentSubscription = _db.Subscriptions.FirstOrDefault(x => x.SubscriptionId == id);
             var application = new Subscription
             {
                 Name = subscriptionDTO.Name?.ToLower() ?? currentSubscription.Name,
@@ -59,7 +59,7 @@ namespace SSOService.Subscriptions.Repositories.Relational.Implementations
             return status ? _response.SuccessResponse(ToDto(currentSubscription))
                 : _response.FailedResponse(ReturnType);
         }
-        public async Task<Response<GetSubscriptionDTO>> ChangeState(Guid id, bool deactivate = false, bool delete = false)
+        public async Task<Response<GetSubscriptionDTO>> ChangeState(long id, bool deactivate = false, bool delete = false)
         {
             var current = await Exists(id);
 
@@ -74,21 +74,21 @@ namespace SSOService.Subscriptions.Repositories.Relational.Implementations
             else current.IsActive = true;
             var hasChanged = await HasChanged(current);
             if (hasChanged)
-                return _response.FailedResponse(ReturnType, string.Format(ValidationConstants.EntityChangedByAnotherUser, current.Id));
+                return _response.FailedResponse(ReturnType, string.Format(ValidationConstants.EntityChangedByAnotherUser, current.SubscriptionId));
             current.ConcurrencyStamp = Guid.NewGuid();
             _db.Subscriptions.Update(current);
             var result = await _db.SaveChangesAsync();
             return result > 0 ? _response.SuccessResponse(ToDto(current)) :
             _response.FailedResponse(ReturnType);
         }
-        public async Task<Response<GetSubscriptionDTO>> Get(Guid id)
+        public async Task<Response<GetSubscriptionDTO>> Get(long id)
         {
             var current = await Exists(id);
             if (current == null)
                 return _response.FailedResponse(ReturnType, string.Format(ValidationConstants.FieldNotFound, DefaultResources.User));
             return _response.SuccessResponse(ToDto(current));
         }
-        public async Task<GetSubscriptionDTO> GetSubscriptionById(Guid id)
+        public async Task<GetSubscriptionDTO> GetSubscriptionById(long id)
         {
             var current = await Exists(id);
             if (current == null) return null;
@@ -106,7 +106,7 @@ namespace SSOService.Subscriptions.Repositories.Relational.Implementations
             }
             return _response.SuccessResponse(list.Select(x => ToDto(x)));
         }
-        public async Task<Response<GetSubscriptionDTO>> AddService(Guid serviceId, Guid subcriptionId)
+        public async Task<Response<GetSubscriptionDTO>> AddService(long serviceId, long subcriptionId)
         {
 
 
@@ -127,10 +127,10 @@ namespace SSOService.Subscriptions.Repositories.Relational.Implementations
             if (status) return _response.SuccessResponse(ToDto(subscription));
             return _response.FailedResponse(ReturnType);
         }
-        public async Task<Response<GetSubscriptionDTO>> UpdateSubscriptionService(Guid serviceId, Guid subcriptionId, bool update)
+        public async Task<Response<GetSubscriptionDTO>> UpdateSubscriptionService(long serviceId, long subcriptionId, bool update)
         {
 
-            var current = await _db.SubscriptionServices.FirstOrDefaultAsync(x => x.ResourceId == serviceId && x.SubscriptionId == subcriptionId);
+            var current = await _db.SubscriptionResources.FirstOrDefaultAsync(x => x.ResourceId == serviceId && x.SubscriptionId == subcriptionId);
             if (current == null)
                 return _response.FailedResponse(ReturnType, string.Format(ValidationConstants.FieldNotFound, DefaultResources.Subscription));
             current.IsActive = update ? !current.IsActive : current.IsActive;
@@ -145,18 +145,18 @@ namespace SSOService.Subscriptions.Repositories.Relational.Implementations
             return new GetSubscriptionDTO
             {
                 ClientId = subscription.ClientId,
-                Id = subscription.Id,
+                Id = subscription.SubscriptionId,
                 Name = subscription.Name
             };
         }
         private async Task<bool> HasChanged(Subscription subscription)
         {
-            var lastest = await Exists(subscription.Id);
+            var lastest = await Exists(subscription.SubscriptionId);
             return !(subscription.ConcurrencyStamp == lastest.ConcurrencyStamp);
         }
-        private async Task<Subscription> Exists(Guid id)
+        private async Task<Subscription> Exists(long id)
         {
-            var current = await _db.Subscriptions.FirstOrDefaultAsync(x => x.Id == id && !x.IsDeleted);
+            var current = await _db.Subscriptions.FirstOrDefaultAsync(x => x.SubscriptionId == id && !x.IsDeleted);
             return current;
         }
 

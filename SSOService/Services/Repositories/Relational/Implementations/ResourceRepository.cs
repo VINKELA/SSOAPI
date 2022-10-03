@@ -27,13 +27,13 @@ namespace SSOService.Services.Repositories.Relational.Implementations
             _db = db;
             _response = serviceResponse;
         }
-        public async Task<Response<GetResourceDTO>> Create(CreateResourceDTO serviceDTO)
+        public async Task<Response<GetResourceDTO>> Create(CreateResourceDTO resourceDTO)
         {
 
             var application = new Resource
             {
-                Name = serviceDTO.Name,
-                ApplicationId = serviceDTO.ResourceTypeId,
+                Name = resourceDTO.Name,
+                ResourceTypeId = resourceDTO.ResourceTypeId,
                 CreatedBy = _currentUser?.Email
             };
             await _db.AddAsync(application);
@@ -48,7 +48,6 @@ namespace SSOService.Services.Repositories.Relational.Implementations
             {
                 Name = x.Name,
                 ResourceTypeId = x.ResourceTypeId,
-                ApplicationId = x.ApplicationId,
                 CreatedBy = _currentUser?.Email
             });
             await _db.AddRangeAsync(list);
@@ -56,10 +55,10 @@ namespace SSOService.Services.Repositories.Relational.Implementations
             return await Get(null);
         }
 
-        public async Task<Response<GetResourceDTO>> Update(Guid id, UpdateResourceDTO serviceDTO)
+        public async Task<Response<GetResourceDTO>> Update(long id, UpdateResourceDTO serviceDTO)
         {
 
-            var currentService = _db.Resources.FirstOrDefault(x => x.Id == id);
+            var currentService = _db.Resources.FirstOrDefault(x => x.ResourceId == id);
             var application = new Resource
             {
                 Name = serviceDTO.Name?.ToLower() ?? currentService.Name,
@@ -71,7 +70,7 @@ namespace SSOService.Services.Repositories.Relational.Implementations
             return status ? _response.SuccessResponse(ToDto(currentService))
                 : _response.FailedResponse(ReturnType);
         }
-        public async Task<Response<GetResourceDTO>> ChangeState(Guid id, bool deactivate = false, bool delete = false)
+        public async Task<Response<GetResourceDTO>> ChangeState(long id, bool deactivate = false, bool delete = false)
         {
             var current = await Exists(id);
 
@@ -86,14 +85,14 @@ namespace SSOService.Services.Repositories.Relational.Implementations
             else current.IsActive = true;
             var hasChanged = await HasChanged(current);
             if (hasChanged)
-                return _response.FailedResponse(ReturnType, string.Format(ValidationConstants.EntityChangedByAnotherUser, current.Id));
+                return _response.FailedResponse(ReturnType, string.Format(ValidationConstants.EntityChangedByAnotherUser, current.ResourceId));
             current.ConcurrencyStamp = Guid.NewGuid();
             _db.Resources.Update(current);
             var result = await _db.SaveChangesAsync();
             return result > 0 ? _response.SuccessResponse(ToDto(current)) :
             _response.FailedResponse(ReturnType);
         }
-        public async Task<Response<GetResourceDTO>> Get(Guid id)
+        public async Task<Response<GetResourceDTO>> Get(long id)
         {
             var current = await Exists(id);
             if (current == null)
@@ -114,18 +113,17 @@ namespace SSOService.Services.Repositories.Relational.Implementations
 
         private static GetResourceDTO ToDto(Resource service) => new()
         {
-            ClientId = service.ApplicationId,
-            Id = service.Id,
+            Id = service.ResourceId,
             Name = service.Name
         };
         private async Task<bool> HasChanged(Resource service)
         {
-            var lastest = await Exists(service.Id);
+            var lastest = await Exists(service.ResourceId);
             return !(service.ConcurrencyStamp == lastest.ConcurrencyStamp);
         }
-        private async Task<Resource> Exists(Guid id)
+        private async Task<Resource> Exists(long id)
         {
-            var current = await _db.Resources.FirstOrDefaultAsync(x => x.Id == id && !x.IsDeleted);
+            var current = await _db.Resources.FirstOrDefaultAsync(x => x.ResourceId == id && !x.IsDeleted);
             return current;
         }
 

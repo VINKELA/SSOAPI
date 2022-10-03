@@ -7,7 +7,7 @@ namespace SSOService.Models.DTOs.Permission
     {
         public PermissionType PermissionType { get; set; }
         public Scope Scope { get; set; }
-        public Guid ResourceId { get; set; }
+        public long ResourceId { get; set; }
         public string Name { get; set; }
 
     }

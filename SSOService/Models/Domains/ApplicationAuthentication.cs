@@ -7,11 +7,14 @@ namespace SSOService.Models.Domains
     {
         public ApplicationAuthentication()
         {
-            ClientSecret = Guid.NewGuid().ToString();
+            ClientSecret =  Guid.NewGuid().ToString();
         }
+        public long ApplicationAuthenticationId { get; set; }
         public string ClientSecret { get; set; }
-        public Guid ClientApplicationId { get; set; }
-        public Guid ServerApplicationId { get; set; }
+        public long ClientApplicationId { get; set; }
+        public Application ClientApplication { get; set; }
+        public long ServerApplicationId { get; set; }
+        public Application ServerApplication { get; set; }
 
 
     }

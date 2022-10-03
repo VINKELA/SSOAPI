@@ -37,19 +37,19 @@ namespace SSOService.Controllers
             => Ok(Response<List<EnumList>>.Success(EnumDictionary.GetList<ClientType>()));
         [HttpDelete("{id}")]
         [ProducesResponseType(type: typeof(Response<GetClientDTO>), statusCode: 200)]
-        public async Task<IActionResult> DeleteClient(Guid id)
+        public async Task<IActionResult> DeleteClient(long id)
             => Ok(await _client.ChangeState(id, false, true));
         [HttpPatch("activate/{id}")]
         [ProducesResponseType(type: typeof(Response<GetClientDTO>), statusCode: 200)]
-        public async Task<IActionResult> ActivateClient(Guid id)
+        public async Task<IActionResult> ActivateClient(long id)
             => Ok(await _client.ChangeState(id));
         [HttpPatch("deactivate/{id}")]
         [ProducesResponseType(type: typeof(Response<GetClientDTO>), statusCode: 200)]
-        public async Task<IActionResult> DeactivateClient(Guid id)
+        public async Task<IActionResult> DeactivateClient(long id)
             => Ok(await _client.ChangeState(id, true));
         [HttpGet("{id}")]
         [ProducesResponseType(type: typeof(Response<GetClientDTO>), statusCode: 200)]
-        public IActionResult GetById(Guid id)
+        public IActionResult GetById(long id)
             => Ok(_client.Get(id));
         [HttpGet]
         [ProducesResponseType(type: typeof(Response<GetClientDTO>), statusCode: 200)]
@@ -58,7 +58,7 @@ namespace SSOService.Controllers
         => Ok(await _client.Get(name, contactPersonEmail, clientType));
         [HttpPut("{id}")]
         [ProducesResponseType(type: typeof(Response<GetClientDTO>), statusCode: 200)]
-        public async Task<IActionResult> Update(Guid id, [FromForm] UpdateClientDTO client)
+        public async Task<IActionResult> Update(long id, [FromForm] UpdateClientDTO client)
         => Ok(await _client.Update(id, client));
         }
 }

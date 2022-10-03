@@ -9,7 +9,7 @@ namespace SSOService.Models.DTOs.Application
         public string Client { get; set; }
         public string Server { get; set; }
         public bool Status { get; set; }
-        public Guid ClientApplicationId { get; set; }
-        public Guid ServerApplicationId { get; set; }
+        public long ClientApplicationId { get; set; }
+        public long ServerApplicationId { get; set; }
     }
 }

@@ -26,7 +26,7 @@ namespace SSOService.Models.DbContexts
         public virtual DbSet<Subscription> Subscriptions { get; set; }
         public virtual DbSet<ClientSubscription> ClientSubscriptions { get; set; }
         public virtual DbSet<Resource> Resources { get; set; }
-        public virtual DbSet<SubscriptionResource> SubscriptionServices { get; set; }
+        public virtual DbSet<SubscriptionResource> SubscriptionResources { get; set; }
         public virtual DbSet<ApplicationAuthentication> ApplicationAuthentications { get; set; }
         public virtual DbSet<Audit> AuditLogs { get; set; }
         public virtual DbSet<Role> Roles { get; set; }
@@ -34,14 +34,39 @@ namespace SSOService.Models.DbContexts
         public virtual DbSet<RolePermission> RolePermissions { get; set; }
         public virtual DbSet<RefreshToken> RefreshTokens { get; set; }
         public virtual DbSet<UserRole> UserRoles { get; set; }
-        public virtual DbSet<ResourceType> ResourceTypes { get; set; }
+        public virtual DbSet<ServiceType> ServiceTypes { get; set; }
         public virtual DbSet<CustomParameter> CustomParameters { get; set; }
-        public virtual DbSet<ApplicationResource> ApplicationResources { get; set; }
+        public virtual DbSet<ResourceEndpoint> ResourceEndpoints { get; set; }
         public virtual DbSet<UserSubscription> UserSubscriptions { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
-            modelBuilder.Entity<Subscription>().Property(p => p.AmountInNaira).HasColumnType("decimal(18,4)");
+            modelBuilder.Entity<Subscription>()
+                .Property(p => p.AmountInNaira)
+                .HasColumnType("decimal(18,4)");
+            modelBuilder.Entity<ApplicationAuthentication>()
+                .HasOne(p=> p.ClientApplication)
+                .WithMany()
+                .OnDelete(DeleteBehavior.NoAction);
+            modelBuilder.Entity<ClientSubscription>()
+                .HasOne(p => p.Subscription)
+                .WithMany()
+                .OnDelete(DeleteBehavior.NoAction);
+            modelBuilder.Entity<SubscriptionResource>()
+                .HasOne(p => p.Subscription)
+                .WithMany()
+                .OnDelete(DeleteBehavior.NoAction);
+            modelBuilder.Entity<ApplicationPermission>()
+                .HasOne(p => p.Permission)
+                .WithMany()
+                .OnDelete(DeleteBehavior.NoAction);
+            modelBuilder.Entity<RolePermission>()
+                .HasOne(p => p.Role)
+                .WithMany()
+                .OnDelete(DeleteBehavior.NoAction);
+
+
+
 
         }
         public virtual async Task<int> SaveChangesAsync()
@@ -63,7 +88,7 @@ namespace SSOService.Models.DbContexts
             }
         }
 
-        private void OnBeforeSaveChanges(Guid? userId)
+        private void OnBeforeSaveChanges(long? userId)
         {
             ChangeTracker.DetectChanges();
             var auditEntries = new List<AuditEntry>();
@@ -74,7 +99,7 @@ namespace SSOService.Models.DbContexts
                     var auditEntry = new AuditEntry
                     {
                         TableName = entry.Entity.GetType().Name,
-                        UserId = userId ?? Guid.Empty
+                        UserId = userId
                     };
                     auditEntries.Add(auditEntry);
                     foreach (var property in entry.Properties)

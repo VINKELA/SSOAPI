@@ -27,13 +27,13 @@ namespace SSOService.Controllers
 
         // GET: api/Roles/5
         [HttpGet("{id}")]
-        public async Task<ActionResult<Response<GetRoleDTO>>> GetRole(Guid id)
+        public async Task<ActionResult<Response<GetRoleDTO>>> GetRole(long id)
             => Ok(await _roleRepository.Get(id));
 
         // PUT: api/Roles/5
         // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
         [HttpPut("{id}")]
-        public async Task<ActionResult<Response<GetRoleDTO>>> PutRole(Guid id, UpdateRoleDTO role)
+        public async Task<ActionResult<Response<GetRoleDTO>>> PutRole(long id, UpdateRoleDTO role)
             => Ok(await _roleRepository.Update(id, role));
 
         // POST: api/Roles
@@ -44,14 +44,14 @@ namespace SSOService.Controllers
 
         // DELETE: api/Roles/5
         [HttpDelete("{id}")]
-        public async Task<ActionResult<Response<GetRoleDTO>>> DeleteRole(Guid id)
+        public async Task<ActionResult<Response<GetRoleDTO>>> DeleteRole(long id)
             => Ok(await _roleRepository.ChangeState(id, false, true));
         [HttpPatch("activate/{id}")]
-        public async Task<ActionResult<Response<GetRoleDTO>>> Activate(Guid id)
+        public async Task<ActionResult<Response<GetRoleDTO>>> Activate(long id)
             => Ok(await _roleRepository.ChangeState(id));
 
         [HttpPatch("deactivate/{id}")]
-        public async Task<ActionResult<Response<GetRoleDTO>>> Deactivate(Guid id)
+        public async Task<ActionResult<Response<GetRoleDTO>>> Deactivate(long id)
             => Ok(await _roleRepository.ChangeState(id, true));
     }
 }

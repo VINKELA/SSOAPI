@@ -51,10 +51,10 @@ namespace SSOService.Services.Repositories.Relational.Implementations
             return status ? _response.SuccessResponse(ToDto(application))
                 : _response.FailedResponse(ReturnType);
         }
-        public async Task<Response<GetApplicationDTO>> Update(Guid id, UpdateApplicationDTO applicationDTO)
+        public async Task<Response<GetApplicationDTO>> Update(long id, UpdateApplicationDTO applicationDTO)
         {
 
-            var currentApplication = await _db.Applications.FirstOrDefaultAsync(x => x.Id == id);
+            var currentApplication = await _db.Applications.FirstOrDefaultAsync(x => x.ApplicationId == id);
             var application = new Application
             {
                 Name = applicationDTO.Name?.ToLower() ?? currentApplication.Name,
@@ -68,7 +68,7 @@ namespace SSOService.Services.Repositories.Relational.Implementations
             return status ? _response.SuccessResponse(ToDto(currentApplication))
                 : _response.FailedResponse(ReturnType);
         }
-        public async Task<Response<GetApplicationDTO>> ChangeState(Guid id, bool deactivate = false, bool delete = false)
+        public async Task<Response<GetApplicationDTO>> ChangeState(long id, bool deactivate = false, bool delete = false)
         {
             var current = await Exists(id);
 
@@ -83,14 +83,14 @@ namespace SSOService.Services.Repositories.Relational.Implementations
             else current.IsActive = true;
             var hasChanged = await HasChanged(current);
             if (hasChanged)
-                return _response.FailedResponse(ReturnType, string.Format(ValidationConstants.EntityChangedByAnotherUser, current.Id));
+                return _response.FailedResponse(ReturnType, string.Format(ValidationConstants.EntityChangedByAnotherUser, current.ApplicationId));
             current.ConcurrencyStamp = Guid.NewGuid();
             _db.Applications.Update(current);
             var result = await _db.SaveChangesAsync();
             return result > 0 ? _response.SuccessResponse(ToDto(current)) :
             _response.FailedResponse(ReturnType);
         }
-        public async Task<Response<GetApplicationDTO>> Get(Guid id)
+        public async Task<Response<GetApplicationDTO>> Get(long id)
         {
             var current = await Exists(id);
             if (current == null)
@@ -119,7 +119,7 @@ namespace SSOService.Services.Repositories.Relational.Implementations
                 list = list.Where(x => x.ApplicationType == x.ApplicationType).ToList();
             return _response.SuccessResponse(list.Select(x => ToDto(x)));
         }
-        public async Task<Response<GetApplicationDTO>> UpdatePermission(Guid applicationId, Guid permissionId, bool update)
+        public async Task<Response<GetApplicationDTO>> UpdatePermission(long applicationId, long permissionId, bool update)
         {
 
             var current = await Exists(applicationId);
@@ -140,7 +140,7 @@ namespace SSOService.Services.Repositories.Relational.Implementations
             return _response.FailedResponse(ReturnType);
         }
 
-        public async Task<Response<GetApplicationDTO>> AddPermissionToApplication(Guid applicationId, Guid permissionId)
+        public async Task<Response<GetApplicationDTO>> AddPermissionToApplication(long applicationId, long permissionId)
         {
 
 
@@ -160,7 +160,7 @@ namespace SSOService.Services.Repositories.Relational.Implementations
             if (status) return await Get(applicationId);
             return _response.FailedResponse(ReturnType);
         }
-        public async Task<Response<GetApplicationDTO>> RemoveResourceToApplication(Guid applicationId, Guid resourceId)
+        public async Task<Response<GetApplicationDTO>> RemoveResourceToApplication(long applicationId, long resourceId)
         {
 
 
@@ -170,9 +170,8 @@ namespace SSOService.Services.Repositories.Relational.Implementations
             var resource = await _resourceRepository.Get(resourceId);
             if (resource.Data == null)
                 return _response.FailedResponse(ReturnType, string.Format(ValidationConstants.FieldNotFound, DefaultResources.Resource));
-            await _db.AddAsync(new ApplicationResource
+            await _db.AddAsync(new ResourceEndpoint
             {
-                ApplicationId = applicationId,
                 ResourceId = resourceId
             }
                 );
@@ -181,7 +180,7 @@ namespace SSOService.Services.Repositories.Relational.Implementations
             return _response.FailedResponse(ReturnType);
         }
 
-        public async Task<Response<GetApplicationDTO>> UpdateResource(Guid applicationId, Guid serverId, bool update)
+        public async Task<Response<GetApplicationDTO>> UpdateResource(long applicationId, long serverId, bool update)
         {
 
             var current = await Exists(applicationId);
@@ -190,8 +189,7 @@ namespace SSOService.Services.Repositories.Relational.Implementations
             var resource = await _resourceRepository.Get(serverId);
             if (resource.Data == null)
                 return _response.FailedResponse(ReturnType, string.Format(ValidationConstants.FieldNotFound, DefaultResources.Resource));
-            var applicationResource = await _db.ApplicationResources.FirstOrDefaultAsync(x => x.ResourceId == serverId &&
-                                           x.ApplicationId == applicationId);
+            var applicationResource = await _db.ResourceEndpoints.FirstOrDefaultAsync(x => x.ResourceId == serverId);
             if (applicationResource == null)
                 return _response.FailedResponse(ReturnType, string.Format(ValidationConstants.FieldNotFound, DefaultResources.ApplicationResource));
             applicationResource.IsActive = update ? !applicationResource.IsActive : applicationResource.IsActive;
@@ -202,7 +200,7 @@ namespace SSOService.Services.Repositories.Relational.Implementations
             return _response.FailedResponse(ReturnType);
         }
 
-        public async Task<Response<GetApplicationAuthentificationDTO>> AddApplication(Guid applicationId, Guid serverId)
+        public async Task<Response<GetApplicationAuthentificationDTO>> AddApplication(long applicationId, long serverId)
         {
 
 
@@ -223,7 +221,7 @@ namespace SSOService.Services.Repositories.Relational.Implementations
             if (status) return _response.SuccessResponse(await ToDto(newAuth.Code));
             return _response.FailedResponse(ApplicationAuthorizationReturnType);
         }
-        public async Task<Response<GetApplicationAuthentificationDTO>> UpdateApplicationAuthentification(Guid applicationId, Guid serverId, bool update)
+        public async Task<Response<GetApplicationAuthentificationDTO>> UpdateApplicationAuthentification(long applicationId, long serverId, bool update)
         {
 
             var current = await _db.ApplicationAuthentications.FirstOrDefaultAsync(x => x.ServerApplicationId == serverId && x.ClientApplicationId == applicationId);
@@ -241,7 +239,7 @@ namespace SSOService.Services.Repositories.Relational.Implementations
             {
                 ApplicationType = application.ApplicationType.DisplayName(),
                 ClientId = application.ClientId,
-                Id = application.Id,
+                Id = application.ApplicationId,
                 Name = application.Name,
                 URL = application.URL
             };
@@ -255,9 +253,9 @@ namespace SSOService.Services.Repositories.Relational.Implementations
             return new GetApplicationAuthentificationDTO
             {
                 Client = application.Name,
-                ClientApplicationId = application.Id,
+                ClientApplicationId = application.ApplicationId,
                 Server = server.Name,
-                ServerApplicationId = server.Id,
+                ServerApplicationId = server.ApplicationId,
                 ClientCode = server.Code,
                 ClientSecret = current.ClientSecret
 
@@ -265,12 +263,12 @@ namespace SSOService.Services.Repositories.Relational.Implementations
         }
         private async Task<bool> HasChanged(Application application)
         {
-            var lastest = await Exists(application.Id);
+            var lastest = await Exists(application.ApplicationId);
             return !(application.ConcurrencyStamp == lastest.ConcurrencyStamp);
         }
-        private async Task<Application> Exists(Guid id)
+        private async Task<Application> Exists(long id)
         {
-            var current = await _db.Applications.FirstOrDefaultAsync(x => x.Id == id && !x.IsDeleted);
+            var current = await _db.Applications.FirstOrDefaultAsync(x => x.ApplicationId == id && !x.IsDeleted);
             return current;
         }
 

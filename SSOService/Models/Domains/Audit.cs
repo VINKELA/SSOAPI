@@ -4,9 +4,11 @@ using System;
 
 namespace SSOService.Models.Domains
 {
-    public class Audit : EntityTracking
+    public class Audit : Base
     {
-        public Guid? UserId { get; set; }
+        public long AuditId { get; set; }
+        public long? UserId { get; set; }
+        public User User { get; set; }
         public AuditType Type { get; set; }
         public string TableName { get; set; }
         public string OldValues { get; set; }

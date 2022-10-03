@@ -5,6 +5,6 @@ namespace SSOService.Models.DTOs.Role
     public class CreateRoleDTO
     {
         public string Name { get; set; }
-        public Guid ClientId { get; set; }
+        public long ClientId { get; set; }
     }
 }

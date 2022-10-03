@@ -8,9 +8,7 @@ namespace SSOService.Models.Domains
         {
             ConcurrencyStamp = Guid.NewGuid();
             Code = Guid.NewGuid().ToString();
-
         }
-
         public Guid ConcurrencyStamp { get; set; }
         public string CreatedBy { get; set; }
         public DateTime? Modified { get; set; }

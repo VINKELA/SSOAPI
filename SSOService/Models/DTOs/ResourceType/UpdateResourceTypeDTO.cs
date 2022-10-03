@@ -1,6 +1,6 @@
 ﻿namespace SSOService.Models.DTOs.ReSourceType
 {
-    public class UpdateResourceTypeDTO
+    public class UpdateServiceTypeDTO
     {
         public string Name { get; set; }
     }

@@ -17,7 +17,7 @@ namespace SSOService.Models.DTOs
         public string ParentClientName { get; set; }
         public string ClientTypeName { get; set; }
         public bool IsActive { get; set; }
-        public Guid Id { get; set; }
+        public long Id { get; set; }
         public byte[] Logo { get; set; }
 
     }

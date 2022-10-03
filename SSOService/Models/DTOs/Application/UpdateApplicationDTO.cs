@@ -8,6 +8,6 @@ namespace SSOService.Models.DTOs.Application
         public string Name { get; set; }
         public ApplicationType? ApplicationType { get; set; }
         public string URL { get; set; }
-        public Guid? ServiceTypeId { get; set; }
+        public long? ServiceTypeId { get; set; }
     }
 }

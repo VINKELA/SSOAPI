@@ -11,9 +11,9 @@ namespace SSOService.Services.Repositories.Relational.Interfaces
     {
         Task<Response<IEnumerable<GetApplicationDTO>>> Get(string name, ApplicationType? applicationType,
         Entity? serviceType);
-        Task<Response<GetApplicationDTO>> Get(Guid id);
-        Task<Response<GetApplicationDTO>> ChangeState(Guid id, bool deactivate = false, bool delete = false);
-        Task<Response<GetApplicationDTO>> Update(Guid id, UpdateApplicationDTO applicationDTO);
+        Task<Response<GetApplicationDTO>> Get(long id);
+        Task<Response<GetApplicationDTO>> ChangeState(long id, bool deactivate = false, bool delete = false);
+        Task<Response<GetApplicationDTO>> Update(long id, UpdateApplicationDTO applicationDTO);
         Task<Response<GetApplicationDTO>> Create(CreateApplicationDTO applicationDTO);
         Task<Response<GetApplicationDTO>> Get(AppLoginDTO app);
 

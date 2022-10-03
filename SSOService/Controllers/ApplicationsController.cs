@@ -28,13 +28,13 @@ namespace SSOService.Controllers
 
         // GET: api/Applications/5
         [HttpGet("{id}")]
-        public ActionResult<Response<Application>> GetApplication(Guid id)
+        public ActionResult<Response<Application>> GetApplication(long id)
             => Ok(_applicationRepository.Get(id));
 
         // PUT: api/Applications/5
         // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
         [HttpPatch("{id}")]
-        public async Task<IActionResult> UpdateApplication(Guid id, UpdateApplicationDTO application)
+        public async Task<IActionResult> UpdateApplication(long id, UpdateApplicationDTO application)
             => Ok(await _applicationRepository.Update(id, application));
 
         // POST: api/Applications
@@ -45,14 +45,14 @@ namespace SSOService.Controllers
 
         // DELETE: api/Applications/5
         [HttpDelete("{id}")]
-        public async Task<IActionResult> DeleteApplication(Guid id)
+        public async Task<IActionResult> DeleteApplication(long id)
             => Ok(await _applicationRepository.ChangeState(id, false, true));
         [HttpPatch("activate/{id}")]
-        public async Task<ActionResult<Response<GetApplicationDTO>>> Activate(Guid id)
+        public async Task<ActionResult<Response<GetApplicationDTO>>> Activate(long id)
             => Ok(await _applicationRepository.ChangeState(id));
 
         [HttpPatch("deactivate/{id}")]
-        public async Task<ActionResult<Response<GetApplicationDTO>>> Deactivate(Guid id)
+        public async Task<ActionResult<Response<GetApplicationDTO>>> Deactivate(long id)
             => Ok(await _applicationRepository.ChangeState(id, true));
     }
 }

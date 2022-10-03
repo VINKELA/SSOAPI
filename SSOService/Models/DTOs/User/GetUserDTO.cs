@@ -5,7 +5,7 @@ namespace SSOService.Models.DTOs.User
 {
     public class GetUserDTO
     {
-        public Guid Id { get; set; }
+        public long Id { get; set; }
         public string FirstName { get; set; }
         public string LastName { get; set; }
         public string Email { get; set; }
@@ -13,7 +13,7 @@ namespace SSOService.Models.DTOs.User
         public string UserName { get; set; }
         public string PasswordHash { get; set; }
         public string Client { get; set; }
-        public Guid ClientId { get; set; }
+        public long ClientId { get; set; }
         public bool IsActive { get; set; }
         public byte[] Image { get; set; }
         public List<UserRoleDTO> UserRoles { get; set; }

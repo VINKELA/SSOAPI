@@ -26,13 +26,13 @@ namespace SSOService.Controllers
 
         // GET: api/Subscriptions/5
         [HttpGet("{id}")]
-        public async Task<ActionResult<Response<GetSubscriptionDTO>>> GetSubscription(Guid id)
+        public async Task<ActionResult<Response<GetSubscriptionDTO>>> GetSubscription(long id)
             => Ok(await _subscriptionRepository.Get(id));
 
         // PUT: api/Subscriptions/5
         // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
         [HttpPut("{id}")]
-        public async Task<ActionResult<Response<GetSubscriptionDTO>>> PutSubscription(Guid id, UpdateSubscriptionDTO subscription)
+        public async Task<ActionResult<Response<GetSubscriptionDTO>>> PutSubscription(long id, UpdateSubscriptionDTO subscription)
             => Ok(await _subscriptionRepository.Update(id, subscription));
 
         // POST: api/Subscriptions
@@ -43,14 +43,14 @@ namespace SSOService.Controllers
 
         // DELETE: api/Subscriptions/5
         [HttpDelete("{id}")]
-        public async Task<ActionResult<Response<GetSubscriptionDTO>>> DeleteSubscription(Guid id)
+        public async Task<ActionResult<Response<GetSubscriptionDTO>>> DeleteSubscription(long id)
             => Ok(await _subscriptionRepository.ChangeState(id, false, true));
         [HttpPatch("activate/{id}")]
-        public async Task<ActionResult<Response<GetSubscriptionDTO>>> Activate(Guid id)
+        public async Task<ActionResult<Response<GetSubscriptionDTO>>> Activate(long id)
             => Ok(await _subscriptionRepository.ChangeState(id));
 
         [HttpPatch("deactivate/{id}")]
-        public async Task<ActionResult<Response<GetSubscriptionDTO>>> Deactivate(Guid id)
+        public async Task<ActionResult<Response<GetSubscriptionDTO>>> Deactivate(long id)
             => Ok(await _subscriptionRepository.ChangeState(id, true));
     }
 }

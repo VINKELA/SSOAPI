@@ -6,8 +6,8 @@ namespace SSOService.Models.DTOs.Resource
 {
     public class DestinationDefinitionDTO
     {
-        internal string EndPointUrl;
-        internal string EndPointMethod;
-        internal IEnumerable<CustomParameter> CustomHeaders;
+        public string EndPointUrl { get; set; }
+        public string EndPointMethod { get; set; }
+        public IEnumerable<CustomParameter> CustomParameters { get; set; }
     }
 }

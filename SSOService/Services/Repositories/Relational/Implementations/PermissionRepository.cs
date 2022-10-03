@@ -58,10 +58,10 @@ namespace SSOService.Services.Repositories.Relational.Implementations
             var status = await _db.SaveChangesAsync();
         }
 
-        public async Task<Response<GetPermissionDTO>> Update(Guid id, UpdatePermissionDTO permissionDTO)
+        public async Task<Response<GetPermissionDTO>> Update(long id, UpdatePermissionDTO permissionDTO)
         {
 
-            var currentPermission = _db.Permissions.FirstOrDefault(x => x.Id == id);
+            var currentPermission = _db.Permissions.FirstOrDefault(x => x.PermissionId == id);
             var application = new Permission
             {
                 Name = permissionDTO.Name?.ToLower() ?? currentPermission.Name,
@@ -73,7 +73,7 @@ namespace SSOService.Services.Repositories.Relational.Implementations
             return status ? _response.SuccessResponse(ToDto(currentPermission))
                 : _response.FailedResponse(ReturnType);
         }
-        public async Task<Response<GetPermissionDTO>> ChangeState(Guid id, bool deactivate = false, bool delete = false)
+        public async Task<Response<GetPermissionDTO>> ChangeState(long id, bool deactivate = false, bool delete = false)
         {
             var current = await Exists(id);
 
@@ -88,14 +88,14 @@ namespace SSOService.Services.Repositories.Relational.Implementations
             else current.IsActive = true;
             var hasChanged = await HasChanged(current);
             if (hasChanged)
-                return _response.FailedResponse(ReturnType, string.Format(ValidationConstants.EntityChangedByAnotherUser, current.Id));
+                return _response.FailedResponse(ReturnType, string.Format(ValidationConstants.EntityChangedByAnotherUser, current.PermissionId));
             current.ConcurrencyStamp = Guid.NewGuid();
             _db.Permissions.Update(current);
             var result = await _db.SaveChangesAsync();
             return result > 0 ? _response.SuccessResponse(ToDto(current)) :
             _response.FailedResponse(ReturnType);
         }
-        public async Task<Response<GetPermissionDTO>> Get(Guid id)
+        public async Task<Response<GetPermissionDTO>> Get(long id)
         {
             var current = await Exists(id);
             if (current == null)
@@ -126,12 +126,12 @@ namespace SSOService.Services.Repositories.Relational.Implementations
         }
         private async Task<bool> HasChanged(Permission permission)
         {
-            var lastest = await Exists(permission.Id);
+            var lastest = await Exists(permission.PermissionId);
             return !(permission.ConcurrencyStamp == lastest.ConcurrencyStamp);
         }
-        private async Task<Permission> Exists(Guid id)
+        private async Task<Permission> Exists(long id)
         {
-            var current = await _db.Permissions.FirstOrDefaultAsync(x => x.Id == id && !x.IsDeleted);
+            var current = await _db.Permissions.FirstOrDefaultAsync(x => x.PermissionId == id && !x.IsDeleted);
             return current;
         }
 

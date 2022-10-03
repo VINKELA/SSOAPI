@@ -98,7 +98,7 @@ namespace SSOService.Services.General.Implementation
             }
             return true;
         }
-        private async Task SaveRefreshToken(string token, Guid userId)
+        private async Task SaveRefreshToken(string token, long userId)
         {
             var newToken = new RefreshToken
             {

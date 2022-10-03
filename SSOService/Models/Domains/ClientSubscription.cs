@@ -9,8 +9,11 @@ namespace SSOService.Models.Domains
         {
             ActivatedOn = DateTime.Now;
         }
-        public Guid ClientId { get; set; }
-        public Guid SubscriptionId { get; set; }
+        public long ClientSubscriptionId { get; set; }
+        public long ClientId { get; set; }
+        public Client Client { get; set; }
+        public long SubscriptionId { get; set; }
+        public Subscription Subscription { get; set; }  
         public DateTime ActivatedOn { get; set; }
         public DateTime? ExpiredOn { get; set; }
     }

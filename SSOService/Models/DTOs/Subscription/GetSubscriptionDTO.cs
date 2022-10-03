@@ -8,8 +8,8 @@ namespace SSOService.Models.DTOs.Subscription
         public string ClientType { get; set; }
         public string Amount { get; set; }
         public string Currency { get; set; }
-        public Guid? ClientId { get; set; }
-        public Guid Id { get; set; }
+        public long? ClientId { get; set; }
+        public long Id { get; set; }
 
 
     }

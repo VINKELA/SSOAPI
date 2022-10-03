@@ -4,9 +4,12 @@ using System;
 namespace SSOService.Models.Domains
 {
 
-    public class UserRole : Base
+    public class UserRole : EntityTracking
     {
-        public Guid UserId { get; set; }
-        public Guid RoleId { get; set; }
+        public long UserRoleId { get; set; }
+        public long UserId { get; set; }
+        public User User { get; set; }
+        public long RoleId { get; set; }
+        public Role Role { get; set; }
     }
 }

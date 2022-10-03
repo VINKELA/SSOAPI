@@ -44,10 +44,10 @@ namespace SSOService.Services.Repositories.Relational.Implementations
             return status ? _response.SuccessResponse(ToDto(role))
                 : _response.FailedResponse(ReturnType);
         }
-        public async Task<Response<GetRoleDTO>> Update(Guid id, UpdateRoleDTO roleDTO)
+        public async Task<Response<GetRoleDTO>> Update(long id, UpdateRoleDTO roleDTO)
         {
 
-            var currentRole = _db.Roles.FirstOrDefault(x => x.Id == id);
+            var currentRole = _db.Roles.FirstOrDefault(x => x.RoleId == id);
             var application = new Role
             {
                 Name = roleDTO.Name?.ToLower() ?? currentRole.Name,
@@ -59,7 +59,7 @@ namespace SSOService.Services.Repositories.Relational.Implementations
             return status ? _response.SuccessResponse(ToDto(currentRole))
                 : _response.FailedResponse(ReturnType);
         }
-        public async Task<Response<GetRoleDTO>> ChangeState(Guid id, bool deactivate = false, bool delete = false)
+        public async Task<Response<GetRoleDTO>> ChangeState(long id, bool deactivate = false, bool delete = false)
         {
             var current = await Exists(id);
 
@@ -74,14 +74,14 @@ namespace SSOService.Services.Repositories.Relational.Implementations
             else current.IsActive = true;
             var hasChanged = await HasChanged(current);
             if (hasChanged)
-                return _response.FailedResponse(ReturnType, string.Format(ValidationConstants.EntityChangedByAnotherUser, current.Id));
+                return _response.FailedResponse(ReturnType, string.Format(ValidationConstants.EntityChangedByAnotherUser, current.RoleId));
             current.ConcurrencyStamp = Guid.NewGuid();
             _db.Roles.Update(current);
             var result = await _db.SaveChangesAsync();
             return result > 0 ? _response.SuccessResponse(ToDto(current)) :
             _response.FailedResponse(ReturnType);
         }
-        public async Task<Response<GetRoleDTO>> Get(Guid id)
+        public async Task<Response<GetRoleDTO>> Get(long id)
         {
             var current = await Exists(id);
             if (current == null)
@@ -118,10 +118,10 @@ namespace SSOService.Services.Repositories.Relational.Implementations
             if (status) return _response.SuccessResponse(ToDto(role));
             return _response.FailedResponse(ReturnType);
         }
-        public async Task<Response<GetRoleDTO>> UpdateClaim(Guid claimId, Guid roleId, bool update)
+        public async Task<Response<GetRoleDTO>> UpdateClaim(long claimId, long roleId, bool update)
         {
 
-            var current = await _db.RoleClaims.FirstOrDefaultAsync(x => x.Id == claimId && x.RoleId == roleId);
+            var current = await _db.RoleClaims.FirstOrDefaultAsync(x => x.RoleClaimId == claimId && x.RoleId == roleId);
             if (current == null)
                 return _response.FailedResponse(ReturnType, string.Format(ValidationConstants.FieldNotFound, DefaultResources.Role));
             current.IsActive = update ? !current.IsActive : current.IsActive;
@@ -130,7 +130,7 @@ namespace SSOService.Services.Repositories.Relational.Implementations
             if (status) return _response.SuccessResponse(ToDto(await Exists(roleId)));
             return _response.FailedResponse(ReturnType);
         }
-        public async Task<Response<GetRoleDTO>> AddPermission(Guid permissionId, Guid roleId)
+        public async Task<Response<GetRoleDTO>> AddPermission(long permissionId, long roleId)
         {
 
 
@@ -151,7 +151,7 @@ namespace SSOService.Services.Repositories.Relational.Implementations
             if (status) return _response.SuccessResponse(ToDto(role));
             return _response.FailedResponse(ReturnType);
         }
-        public async Task<Response<GetRoleDTO>> UpdateRolePermission(Guid permissionId, Guid roleId, bool update)
+        public async Task<Response<GetRoleDTO>> UpdateRolePermission(long permissionId, long roleId, bool update)
         {
 
             var current = await _db.RolePermissions.FirstOrDefaultAsync(x => x.PermissionId == permissionId && x.RoleId == roleId);
@@ -169,18 +169,18 @@ namespace SSOService.Services.Repositories.Relational.Implementations
             return new GetRoleDTO
             {
                 ClientId = role.ClientId,
-                Id = role.Id,
+                Id = role.RoleId,
                 Name = role.Name
             };
         }
         private async Task<bool> HasChanged(Role role)
         {
-            var lastest = await Exists(role.Id);
+            var lastest = await Exists(role.RoleId);
             return !(role.ConcurrencyStamp == lastest.ConcurrencyStamp);
         }
-        private async Task<Role> Exists(Guid id)
+        private async Task<Role> Exists(long id)
         {
-            var current = await _db.Roles.FirstOrDefaultAsync(x => x.Id == id && !x.IsDeleted);
+            var current = await _db.Roles.FirstOrDefaultAsync(x => x.RoleId == id && !x.IsDeleted);
             return current;
         }
 

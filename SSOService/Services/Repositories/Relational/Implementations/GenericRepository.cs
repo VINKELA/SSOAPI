@@ -149,12 +149,12 @@ namespace SSOService.Services.Implementations
         {
             return await _context.Set<T>().FindAsync(id);
         }
-        public T GetById_IsGuid(Guid id)
+        public T GetById_Islong(long id)
         {
             return _context.Set<T>().Find(id);
         }
 
-        public async Task<T> GetById_IsGuid_Async(Guid id)
+        public async Task<T> GetById_Islong_Async(long id)
         {
             return await _context.Set<T>().FindAsync(id);
         }

@@ -2,9 +2,11 @@
 
 namespace SSOService.Models.Domains
 {
-    public class ResourceType : EntityTracking
+    public class ServiceType : EntityTracking
     {
+        public long ServiceTypeId { get; set; }    
         public string Name { get; set; }
-        public Guid ApplicationId { get; set; }
+        public long ApplicationId { get; set; }
+        public Application Application { get; set; }
     }
 }

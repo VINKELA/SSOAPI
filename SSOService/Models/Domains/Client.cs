@@ -6,7 +6,7 @@ namespace SSOService.Models.Domains
     // A business that has users this sso, this is our customers
     public class Client : EntityTracking
     {
-
+        public long ClientId { get; set; }
         public string Name { get; set; }
         public string Address { get; set; }
         public string Country { get; set; }
@@ -17,8 +17,7 @@ namespace SSOService.Models.Domains
         public string ContactPersonPhoneNumber { get; set; }
         public string LogoUrl { get; set; }
         public string Motto { get; set; }
-        public Guid? ParentClientId { get; set; }
-
-
+        public long? ParentClientId { get; set; }
+        public Client ParentClient { get; set; }
     }
 }
